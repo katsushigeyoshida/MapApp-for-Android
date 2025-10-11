@@ -43,14 +43,14 @@
 
 <img src="image/MapApp_MapEdit.png" width="80%">
   
-<img src="image/MapApp_Main_GpsTrace.png" width="80%">
+<img src="image/MapApp_Main_GPSTrace.png" width="80%">
 
-<img src="image/MapApp_GpsTraceList.png" width="80%">
+<img src="image/MapApp_GPSTraceList.png" width="80%">
 
 
-<img src="image/MapApp_GpsTraceListMenu.png" width="80%">
+<img src="image/MapApp_GPSTraceListMenu.png" width="80%">
 
-<img src="image/MapApp_GpsTraceEdit.png" width="80%">
+<img src="image/MapApp_GPSTraceEdit.png" width="80%">
 
 
 <img src="image/MapApp_GpsTraceGraph.png" width="80%">
