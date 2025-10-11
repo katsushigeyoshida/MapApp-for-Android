@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <Button
+        android:id="@+id/btClockInc"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:background="#FFFFFF"
+        android:insetLeft="0dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_access_time_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btGpsTraceList" />
+
+    <Button
+        android:id="@+id/btGpsTraceList"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:background="#FFFFFF"
+        android:insetLeft="0dp"
+        android:minHeight="0dp"
+        android:paddingLeft="10dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/outline_reorder_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btMark" />
+
+    <Button
+        android:id="@+id/btMark"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:background="#FFFFFF"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@android:drawable/ic_menu_myplaces"
+        app:iconPadding="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btGpsOn" />
+
+    <Button
+        android:id="@+id/btGpsOn"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:background="#E91E63"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_location_on_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btMoveRight" />
+
+    <Button
+        android:id="@+id/btZoomDown"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_remove_circle_outline_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btZoomUp" />
+
+    <Button
+        android:id="@+id/btZoomUp"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_add_circle_outline_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btRedraw" />
+
+    <Button
+        android:id="@+id/btMoveRight"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_arrow_forward_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btMoveLeft" />
+
+    <Button
+        android:id="@+id/btMoveLeft"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_arrow_back_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btMoveDown" />
+
+    <Button
+        android:id="@+id/btMoveDown"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_arrow_downward_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btMoveUp" />
+
+    <Button
+        android:id="@+id/btMoveUp"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_arrow_upward_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btZoomDown" />
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:text="地図"
+        android:textColor="#1A237E"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="110dp"
+        android:text="ズーム"
+        android:textColor="#1A237E"
+        app:layout_constraintStart_toEndOf="@+id/textView"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="70dp"
+        android:text="列数"
+        android:textColor="#1A237E"
+        app:layout_constraintStart_toEndOf="@+id/textView4"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Spinner
+        android:id="@+id/spMapType"
+        android:layout_width="160dp"
+        android:layout_height="20dp"
+        android:background="#64B5F6"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textView" />
+
+    <Spinner
+        android:id="@+id/spZoomLevel"
+        android:layout_width="100dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="1dp"
+        android:background="#64B5F6"
+        app:layout_constraintStart_toEndOf="@+id/spMapType"
+        app:layout_constraintTop_toBottomOf="@+id/textView4" />
+
+    <Spinner
+        android:id="@+id/spColCount"
+        android:layout_width="80dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="1dp"
+        android:background="#64B5F6"
+        app:layout_constraintStart_toEndOf="@+id/spZoomLevel"
+        app:layout_constraintTop_toBottomOf="@+id/textView5" />
+
+    <Button
+        android:id="@+id/btRedraw"
+        android:layout_width="33dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="2dp"
+        android:layout_marginBottom="8dp"
+        android:minHeight="0dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="0dp"
+        app:icon="@drawable/ic_baseline_sync_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayoutMap"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toTopOf="@+id/btRedraw"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/spMapType">
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
