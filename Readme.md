@@ -1,6 +1,6 @@
 ## いろんな地図(MapApp) - 地図表示
 
-旧版のMapAppが新しい開発環境(Android Studio Narwhalで再作成。  
+旧版のMapAppを新しい開発環境(Android Studio Narwhal)で再作成。  
 大きな変更はGPSデータファイルなどを共通ストレージ(/strage/emulated/0/DCIM/mapapp)に変更、あと細かいところを修正。  
 
 ### 機能
@@ -31,30 +31,41 @@
 ### 目的地リスト選択
 <img src="image/MapApp_Main_MapMenu.png" width="80%">
 
-<img src="image/MapApp_Main_色別標高図.png" width="80%">
-
+### 標準地図
 <img src="image/MapApp_Main_標準地図.png" width="80%">
 
+### 色別標高図
+<img src="image/MapApp_Main_色別標高図.png" width="80%">
+
+### 航空写真地図
 <img src="image/MapApp_Main_航空写真.png" width="80%">
 
+### 気象庁の雨雲の動きと白地図の重ね合わせ
 <img src="image/MapApp_Main_雨雲の動き.png" width="80%">
 
+### 20万分の1日本シームレス地質図
+凡例ファイル(data/legend_seamless_v2.csv)を入れると地質名が表示できる
 <img src="image/MapApp_Main_日本シームレス地質図.png" width="80%">
 
+### 地図データの設定編集
 <img src="image/MapApp_MapEdit.png" width="80%">
   
+### GPSのトレース表示
 <img src="image/MapApp_Main_GPSTrace.png" width="80%">
 
+### GPSトレースリスト
 <img src="image/MapApp_GPSTraceList.png" width="80%">
 
-
+### GPSトレースリストの操作メニュー
 <img src="image/MapApp_GPSTraceListMenu.png" width="80%">
 
+### GPSトレースファイルの登録編集
 <img src="image/MapApp_GPSTraceEdit.png" width="80%">
 
-
+### GPSトレースデータのグラフ表示
 <img src="image/MapApp_GpsTraceGraph.png" width="80%">
 
+### マークデータの編集画面
 <img src="image/MapApp_MarkEdit.png" width="80%">
 
 #### インストール方法
