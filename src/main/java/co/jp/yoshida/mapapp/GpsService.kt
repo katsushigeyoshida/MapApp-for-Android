@@ -69,7 +69,7 @@ class GpsService : Service(), SensorEventListener {
     private lateinit var mLocationRequest: LocationRequest
     private lateinit var mOnUpdateLocation: GpsService.OnUpdateLocation //  GPSコールバックオブジェクト
     private lateinit var  mSensorManager: SensorManager
-    private val mIntervalTime = 5000L - 1000L       //  GPS取得インターバル(ms)
+    private val mIntervalTime = 5000L               //  GPS取得インターバル(ms)
     private var mGpsFilePath = ""                   //  GPSデータ保存パス
     private var mGpsCount = 0
 
@@ -82,7 +82,6 @@ class GpsService : Service(), SensorEventListener {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
-        Log.d(TAG,"onCreate")
 //        super.onCreate()
         //  通知設定(HIGH:sound,heads-up,vib DEFAULT:,vib LOW:no sound,no vib MIN:no sound,no icon, no vib)
         notificationSet(serviceName, NotificationManager.IMPORTANCE_DEFAULT, CHANNEL_ID)
@@ -116,12 +115,7 @@ class GpsService : Service(), SensorEventListener {
         return  null
     }
 
-    override fun onStartCommand(
-        intent: Intent?,
-        flags: Int,
-        startId: Int
-    ): Int {
-        Log.d(TAG,"onStartCommand")
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         //  通知設定
         notificationStart(this@GpsService, CHANNEL_ID, serviceStartTitle, serviceStartMsg)
         //  GPS追跡開始
@@ -133,7 +127,6 @@ class GpsService : Service(), SensorEventListener {
     }
 
     override fun onDestroy() {
-        Log.d(TAG,"onDestroy")
         GpsLocationEnd()
         mSensorManager.unregisterListener(this)
         super.onDestroy()
@@ -163,7 +156,6 @@ class GpsService : Service(), SensorEventListener {
      * 位置情報の追跡開始
      */
     fun GpsLocationStart(): Boolean {
-        Log.d(TAG,"GpsLocationStart")
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED &&
             ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -171,6 +163,7 @@ class GpsService : Service(), SensorEventListener {
             return false
         }
         mFusedLocationClient.requestLocationUpdates(mLocationRequest, mOnUpdateLocation,mainLooper)
+        mGpsCount = 0
         return true
     }
 
@@ -178,7 +171,6 @@ class GpsService : Service(), SensorEventListener {
      * 位置情報追跡の停止
      */
     private fun GpsLocationEnd() {
-        Log.d(TAG,"GpsLocationEnd")
         mFusedLocationClient.removeLocationUpdates(mOnUpdateLocation)
     }
 
@@ -190,7 +182,7 @@ class GpsService : Service(), SensorEventListener {
         @RequiresApi(Build.VERSION_CODES.O)
         override fun onLocationResult(locationResult: LocationResult) {
 //            super.onLocationResult
-            Log.d(TAG,"OnUpdateLocation: "+mGpsCount)
+            if (mGpsCount == 1) klib.beep(50 * 3)
             if (0 < mGpsCount++) {
                 locationResult.let {
                     val location =  it.lastLocation
@@ -213,7 +205,6 @@ class GpsService : Service(), SensorEventListener {
             }
         }
     }
-
 
     /**
      * 位置情報の追加保存
@@ -258,24 +249,20 @@ class GpsService : Service(), SensorEventListener {
      * message      通知メッセージ
      */
     fun notificationStart(context: Context, channelId: String, title: String, message: String) {
-        Log.d(TAG,"notificationStart")
         val builder = NotificationCompat.Builder(context, channelId)
         builder.setSmallIcon(android.R.drawable.ic_dialog_info) //  アイコン設定
         builder.setContentTitle(title)                          //  表示タイトルの設定
         builder.setContentText(message)                         //  表示メッセージの設定
-        Log.d(TAG,"notificationStart 1")
 
         val intent = Intent(this@GpsService, MainActivity::class.java)   //  起動先Activity
         intent.putExtra("fromNptification", true)   //  起動先atcivityの設定
         //  Target SDK 31(Android 12)から PendingIntent のmutability(可変性)を指定する必要
         val stopServiceIntent = PendingIntent.getActivity(context, 0,
             intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        Log.d(TAG,"notificationStart 2")
         builder.setContentIntent(stopServiceIntent)             //  PendingIntentの設定
         builder.setAutoCancel(true)                             //  通知メッセージの自動消去
         val notification = builder.build()                      //  オブジェクトの生成
         startForeground(200, notification)                  //  ServiceのForGround化
-        Log.d(TAG,"notificationStart end")
     }
 
     /**

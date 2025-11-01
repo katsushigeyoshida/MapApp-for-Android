@@ -3,6 +3,7 @@ package co.jp.yoshida.mapapp
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.util.Log
 import android.util.Size
 import android.view.View
 import java.util.Date
@@ -66,6 +67,7 @@ class GpsGraphView(context: Context, var mGpsData: GpxReader): View(context) {
     fun reDraw() {
         invalidate()
     }
+
     /**
      * グラフエリアの初期設定
      * width        グラフエリアの幅
@@ -91,7 +93,6 @@ class GpsGraphView(context: Context, var mGpsData: GpxReader): View(context) {
         mEndPos = mGpsData.mListGpsData.lastIndex
         mStepYSize = klib.graphStepSize(kdraw.mWorld.height(), 5.0)
     }
-
 
     /**
      * グラフの画面表示
@@ -163,6 +164,9 @@ class GpsGraphView(context: Context, var mGpsData: GpxReader): View(context) {
             yScaleDraw(y, PointD(kdraw.mWorld.left, y))
         }
         getYTitleDraw()
+        Log.d(TAG,"setAxis "+mGpsData.mListGpsData.size+" "+
+                mGpsData.mListGpsData.sumOf{it.mLap}+" "+
+                (mGpsData.mListGpsData.sumOf { it.mLap } / mGpsData.mListGpsData.size))
     }
 
     /**
@@ -184,18 +188,19 @@ class GpsGraphView(context: Context, var mGpsData: GpxReader): View(context) {
      */
     fun getYTitleDraw() {
         val ytitle = when (mYType) {
-            YTYPE.LapTime -> mYTitle[0]
-            YTYPE.Distance -> mYTitle[1]
-            YTYPE.Elevator -> mYTitle[2]
-            YTYPE.ElevatorDiff -> mYTitle[3]
-            YTYPE.Speed -> mYTitle[4]
-            YTYPE.StepCount -> mYTitle[5]
+                YTYPE.LapTime -> mYTitle[0]
+                YTYPE.Distance -> mYTitle[1]
+                YTYPE.Elevator -> mYTitle[2]
+                YTYPE.ElevatorDiff -> mYTitle[3]
+                YTYPE.Speed -> mYTitle[4]
+                YTYPE.StepCount -> mYTitle[5] +
+                        String.format("(step/%.1fsec)",
+                            (mGpsData.mListGpsData.sumOf { it.mLap } / 1000.0 / mGpsData.mListGpsData.size))
         }
         kdraw.drawWText(ytitle, PointD(kdraw.mWorld.left - kdraw.cnvScreen2WorldX(mLeftMargin - 20.0),
             kdraw.mWorld.centerY()),
             90.0, KDraw.HALIGNMENT.Center, KDraw.VALIGNMENT.Bottom)
     }
-
 
     /**
      * 横軸目盛の表示

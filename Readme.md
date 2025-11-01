@@ -44,7 +44,7 @@
 <img src="image/MapApp_Main_雨雲の動き.png" width="80%">
 
 ### 20万分の1日本シームレス地質図
-凡例ファイル(data/legend_seamless_v2.csv)を入れると地質名が表示できる
+凡例ファイル(data/legend_seamless_v2.csv)を入れると地質名が表示できる  
 <img src="image/MapApp_Main_日本シームレス地質図.png" width="80%">
 
 ### 地図データの設定編集
@@ -69,7 +69,7 @@
 <img src="image/MapApp_MarkEdit.png" width="80%">
 
 #### インストール方法
-実行ファイルのダウンロードは[gpsinfo-debug.apk](gpsinfo-debug.apk)をダウンロードする。  
+実行ファイルのダウンロードは[mapapp-debug.apk](mapapp-debug.apk)をダウンロードする。  
 <img src="image/download.png" width="80%">
 
 スマホを開発者オプションの設定にする(Android12/13)
@@ -83,6 +83,7 @@
 Filesアプリでダウンロードしたファイルをタップするかファイルを選択してから右側の点をタップするとメニューが表示されるのでインストールを選択するとインストールが開始される。  
 
 履歴  
+2025/10/15 PSトレース開始時にBeep音追加、GPSトレースグラフに歩数を追加  
 2025/09/26 Android Studio Norwhal で再作成  
 
 

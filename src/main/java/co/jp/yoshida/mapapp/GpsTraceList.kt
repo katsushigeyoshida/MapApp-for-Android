@@ -375,13 +375,11 @@ class GpsTraceList {
         if (klib.existsFile(gpsData.mFilePath)) {
             val title = gpsData.mTitle
             val group = gpsData.mGroup
-//            val category = gpsData.mCategory
             val color = gpsData.mLineColor
             val comment = gpsData.mComment
             gpsData.loadGpsData()
             gpsData.mTitle = title
             gpsData.mGroup = group
-//            gpsData.mCategory = category
             gpsData.mComment = comment
             gpsData.mLineColor = color
             return true
@@ -469,9 +467,7 @@ class GpsTraceList {
                     mDataList.add(gpsTraceData)
             }
         } catch(e: Exception) {
-            Log.d(TAG, "loadListFile"+e.message)
             mErrorMessage = "トレースリスト読み込みエラー" + e.message
-//            Toast.makeText(mC, "トレースリスト読み込みエラー" + e.message, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -512,6 +508,7 @@ class GpsTraceList {
         var mFirstTime = Date()                 //  開始時間
         var mLastTime = Date()                  //  終了時間
         var mStepCount = 0                      //  歩数
+        var mGpsDataSize = 0                    //  GPSデータサイズ
 
         val klib = KLib()
 
@@ -520,7 +517,7 @@ class GpsTraceList {
             var mDataFormat = listOf<String>(
                 "Title", "Group", "Category", "Comment", "FilePath", "Visible", "Color", "Thickness",
                 "Left", "Top", "Right", "Bottom", "Distance", "MinElevator", "MaxElevator",
-                "FirstTime", "LastTime", "StepCount"
+                "FirstTime", "LastTime", "StepCount", "DataSize"
             )
             //  GPSデータファイル(csv)のタイトル
             var mGpsFormat = listOf<String>(
@@ -537,21 +534,22 @@ class GpsTraceList {
          * gpsTraceData     GpsTracedata
          */
         constructor(gpsTraceData: GpsTraceData): this() {
-            mTitle = gpsTraceData.mTitle
-            mGroup = gpsTraceData.mGroup
-            mCategory = gpsTraceData.mCategory
-            mComment = gpsTraceData.mComment
-            mFilePath = gpsTraceData.mFilePath
-            mVisible = gpsTraceData.mVisible
-            mLineColor = gpsTraceData.mLineColor
-            mThickness = gpsTraceData.mThickness
-            mLocArea =gpsTraceData.mLocArea
-            mDistance = gpsTraceData.mDistance
+            mTitle        = gpsTraceData.mTitle
+            mGroup        = gpsTraceData.mGroup
+            mCategory     = gpsTraceData.mCategory
+            mComment      = gpsTraceData.mComment
+            mFilePath     = gpsTraceData.mFilePath
+            mVisible      = gpsTraceData.mVisible
+            mLineColor    = gpsTraceData.mLineColor
+            mThickness    = gpsTraceData.mThickness
+            mLocArea      = gpsTraceData.mLocArea
+            mDistance     = gpsTraceData.mDistance
             mMinElevation = gpsTraceData.mMinElevation
             mMaxElevation = gpsTraceData.mMaxElevation
-            mFirstTime = gpsTraceData.mFirstTime
-            mLastTime = gpsTraceData.mLastTime
-            mStepCount = gpsTraceData.mStepCount
+            mFirstTime    = gpsTraceData.mFirstTime
+            mLastTime     = gpsTraceData.mLastTime
+            mStepCount    = gpsTraceData.mStepCount
+            mGpsDataSize  = gpsTraceData.mGpsDataSize
         }
 
         /**
@@ -590,7 +588,6 @@ class GpsTraceList {
             title += "[" + mCategory + "]"
             title += "[" + mGroup + "] "
             if (titleType== 1) {
-//                var folder = klib.getFolder(mFilePath)
                 title += mFilePath.substring(pathOffset)
             } else {
                 title += "%.2f km".format(mDistance)
@@ -607,13 +604,16 @@ class GpsTraceList {
         fun getInfoData(): String {
             var buffer = ""
             val tz = Date().getTimezoneOffset() / 60 + 9
-            buffer += "開始時間 " + klib.date2String( mFirstTime, "yyyy/MM/dd HH:mm:ss", tz) + "\n"
-            buffer += "終了時間 " + klib.date2String( mLastTime, "yyyy/MM/dd HH:mm:ss", tz) + "\n"
-            buffer += "経過時間 " + klib.lap2String(mLastTime.time - mFirstTime.time) + "\n"
-            buffer += "移動距離 " + "%.2f km  ".format(mDistance)
+            val lap = (mLastTime.time - mFirstTime.time).toDouble() / 1000.0
+            buffer += "開始時間 " + klib.date2String( mFirstTime, "yyyy/MM/dd HH:mm:ss", tz)
+            buffer += "\n終了時間 " + klib.date2String( mLastTime, "yyyy/MM/dd HH:mm:ss", tz)
+            buffer += "\n経過時間 " + klib.lap2String(mLastTime.time - mFirstTime.time)
+            buffer += "\n移動距離 " + "%.2f km  ".format(mDistance)
             buffer += "速度　%.1f km/h  ".format(mDistance/(mLastTime.time - mFirstTime.time)*60*60*1000)
-            buffer += "歩数 " + mStepCount + "\n"
-            buffer += "最大標高 %.0f m".format(mMaxElevation) + " 最小標高 %.0f m".format(mMinElevation)
+            buffer += "歩数 " + mStepCount
+            buffer += "\n最大標高 %.0f m".format(mMaxElevation) + " 最小標高 %.0f m".format(mMinElevation)
+            if (0 < mGpsDataSize)
+                buffer += "\nデータ数 " + mGpsDataSize + "  平均測定間隔 " + String.format("%.1f sec", lap / mGpsDataSize)
             return buffer
         }
 
@@ -623,24 +623,25 @@ class GpsTraceList {
         fun getStringData(data: List<String>) {
             mLocData.clear()
             mStepCountList.clear()
-            mTitle = data[0]
-            mGroup = data[1]
-            mCategory = data[2]
-            mComment = data[3]
-            mFilePath = data[4]
-            mVisible = data[5].toBoolean()
-            mLineColor = data[6]
-            mThickness = data[7].toFloat()
-            mLocArea.left = data[8].toDouble()
-            mLocArea.top = data[9].toDouble()
-            mLocArea.right = data[10].toDouble()
+            mTitle          = data[0]
+            mGroup          = data[1]
+            mCategory       = data[2]
+            mComment        = data[3]
+            mFilePath       = data[4]
+            mVisible        = data[5].toBoolean()
+            mLineColor      = data[6]
+            mThickness      = data[7].toFloat()
+            mLocArea.left   = data[8].toDouble()
+            mLocArea.top    = data[9].toDouble()
+            mLocArea.right  = data[10].toDouble()
             mLocArea.bottom = data[11].toDouble()
-            mDistance = data[12].toDouble()
-            mMinElevation = data[13].toDouble()
-            mMaxElevation = data[14].toDouble()
-            mFirstTime = Date(data[15].toLong())
-            mLastTime = Date(data[16].toLong())
-            mStepCount = data[17].toInt()
+            mDistance       = data[12].toDouble()
+            mMinElevation   = data[13].toDouble()
+            mMaxElevation   = data[14].toDouble()
+            mFirstTime      = Date(data[15].toLong())
+            mLastTime       = Date(data[16].toLong())
+            mStepCount      = data[17].toInt()
+            mGpsDataSize    = data[18].toInt()
         }
 
         /**
@@ -666,6 +667,7 @@ class GpsTraceList {
             data.add(mFirstTime.time.toString())
             data.add(mLastTime.time.toString())
             data.add(mStepCount.toString())
+            data.add(mGpsDataSize.toString())
             return data
         }
 
@@ -736,7 +738,7 @@ class GpsTraceList {
             var gpsTraceData = klib.loadCsvData(filePath, mGpsFormat)
             if (0 < gpsTraceData.size) {
                 //  旧データ(タイトルミス)?
-                if (gpsTraceData[0].size != mGpsFormat.size || gpsTraceData[0][3].isEmpty())
+                if (gpsTraceData[0].size == mGpsFormat2.size || gpsTraceData[0][3].isEmpty())
                     gpsTraceData = klib.loadCsvData(filePath, mGpsFormat2)
             }
             for (data in gpsTraceData){
@@ -794,13 +796,14 @@ class GpsTraceList {
             if (0 < gpsReader.getGpxRead(mFilePath)) {
                 //  GPSデータから位置リストを取得
                 gpsReader.setGpsInfoData()
-                mLocData  = gpsReader.mListGpsPointData
-                mLocArea  = gpsReader.mGpsInfoData.mArea
-                mDistance = gpsReader.mGpsInfoData.mDistance
+                mLocData      = gpsReader.mListGpsPointData
+                mLocArea      = gpsReader.mGpsInfoData.mArea
+                mDistance     = gpsReader.mGpsInfoData.mDistance
                 mMinElevation = gpsReader.mGpsInfoData.mMinElevator
                 mMaxElevation = gpsReader.mGpsInfoData.mMaxElevator
                 mFirstTime    = Date(gpsReader.mGpsInfoData.mFirstTime.time)
                 mLastTime     = Date(gpsReader.mGpsInfoData.mLastTime.time)
+                mGpsDataSize  = gpsReader.mListGpsPointData.size
             }
             val lap = mLastTime.time - mFirstTime.time
             mCategory = data2Category(lap, mDistance, 0, mMaxElevation - mMinElevation)
@@ -825,6 +828,7 @@ class GpsTraceList {
             mFirstTime = Date(listData[0][1].toLong())
             mLastTime = Date(listData[listData.lastIndex][1].toLong())
             mStepCount = klib.str2Integer(listData[listData.lastIndex][8]) - klib.str2Integer(listData[0][8])
+            mGpsDataSize = listData.size
             mDistance = 0.0
             mMinElevation = Double.MAX_VALUE
             mMaxElevation = Double.MIN_VALUE
@@ -833,13 +837,13 @@ class GpsTraceList {
             for (data in listData) {
                 if (data[0].compareTo("DateTime") != 0) {
                     var location = Location(LocationManager.GPS_PROVIDER)
-                    location.time = data[1].toLong()            //  Time      時間(ms)
-                    location.latitude = data[2].toDouble()      //  Latitude  緯度
+                    location.time      = data[1].toLong()       //  Time      時間(ms)
+                    location.latitude  = data[2].toDouble()     //  Latitude  緯度
                     location.longitude = data[3].toDouble()     //  Longitude 経度
-                    location.altitude = data[4].toDouble()      //  Altitude  高度(m)
-                    location.speed = data[5].toFloat()          //  Speed     速度(m/s)
-                    location.bearing = data[6].toFloat()        //  Bearing   方位(度)
-                    location.accuracy = data[7].toFloat()       //  Accuracy  精度(半径 m)
+                    location.altitude  = data[4].toDouble()     //  Altitude  高度(m)
+                    location.speed     = data[5].toFloat()      //  Speed     速度(m/s)
+                    location.bearing   = data[6].toFloat()      //  Bearing   方位(度)
+                    location.accuracy  = data[7].toFloat()      //  Accuracy  精度(半径 m)
                     val loc = PointD(location.longitude, location.latitude)
                     if (!preLoc.isEmpty())
                         mDistance += klib.cordinateDistance(preLoc, loc)

@@ -54,7 +54,7 @@ class GpxEditActivity : AppCompatActivity() {
 //        enableEdgeToEdge()
         setContentView(R.layout.activity_gpx_edit)
 
-        this.title = "GPXファイル登録"
+        this.title = "GPSファイル登録"
 
         mGpxDataListPath = klib.getStrPreferences("GpsTraceListPath", this).toString()
         mGpsTraceList.mGpsTraceListPath = mGpxDataListPath
@@ -71,6 +71,7 @@ class GpxEditActivity : AppCompatActivity() {
                 mGpxFilePath = klib.getUriPath(this, data)
             }
         } else if(Intent.ACTION_SEND.equals(action)) {
+            //  外部アプリ(gpsInfo)から共有で起動された場合
             val extras = intent.getExtras()
             if (extras != null) {
                 mGpxFilePath = extras.getCharSequence(Intent.EXTRA_TEXT).toString()
@@ -243,6 +244,8 @@ class GpxEditActivity : AppCompatActivity() {
         edTitle.setText(if (title.isEmpty()) klib.getFileNameWithoutExtension(gpxFilePath) else title)
         spCategory.setSelection(mGpsTraceList.mCategoryMenu.indexOf(gpsFileData.mCategory))
         edGpxPath.setText(gpxFilePath)
+        if (gpsFileData.mGpsDataSize == 0)
+            gpsFileData.loadGpsData(false)
         tvGpxInfo.setText(gpsFileData.getInfoData())
         tvYear.setText(klib.date2String( gpsFileData.mFirstTime, "yyyy年"))
     }
