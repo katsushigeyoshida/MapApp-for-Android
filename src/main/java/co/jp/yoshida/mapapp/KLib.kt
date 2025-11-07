@@ -2183,7 +2183,7 @@ class KLib {
     /**
      * GPS permissionの確認
      */
-    fun checkGpsPermission(c: Context?): Boolean {
+    fun checkGpsPermission(c: Context?, msg: Boolean = true): Boolean {
         // 既に許可している
         return if (ActivityCompat.checkSelfPermission(c!!,
                 Manifest.permission.ACCESS_FINE_LOCATION) ==
@@ -2191,7 +2191,8 @@ class KLib {
             true
         } else {
             // 拒否していた場合
-            messageDialog(c, "アクセス権",
+            if (msg)
+                messageDialog(c, "アクセス権",
                 "位置情報のアクセス権限が与えられていません\n" +
                         "[設定]-[アプリと通知]-[アプリ名]-[権限]で位置情報をONにしてください")
             false

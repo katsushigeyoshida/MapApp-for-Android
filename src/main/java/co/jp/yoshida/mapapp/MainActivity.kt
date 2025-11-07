@@ -1,12 +1,13 @@
 package co.jp.yoshida.mapapp
 
-import android.app.ComponentCaller
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.util.Size
 import android.view.Menu
@@ -27,7 +28,10 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.util.Consumer
 import co.jp.yoshida.mapapp.GpsService.Companion.mGpsFileName
 import co.jp.yoshida.mapapp.databinding.ActivityMainBinding
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.abs
 import kotlin.text.split
 
 //  GPS位置情報取得
@@ -63,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     val MENU09 = 9
     val MENU10 = 10
     val MENU11 = 11
+    val MENU12 = 12
 
     val REQUESTCODE_WIKI = 1
     val REQUESTCODE_MAPINFDATA = 2
@@ -107,6 +112,7 @@ class MainActivity : AppCompatActivity() {
 
     lateinit var mMapView: MapView                  //  表示Viewクラス
     var mMapViewTop = 310                           //  ViewのTOP位置(マウス位置のオフセット)
+    val mZoomRate = 0.5                             //  ZoomButtonの時の拡大率
     var mMapInfoData = MapInfoData()                //  地図のデータ情報
     var mMapData = MapData(this, mMapInfoData)      //  地図のパラメータクラス
     var mAreaData = AreaData()                      //  画面登録クラス
@@ -236,21 +242,27 @@ class MainActivity : AppCompatActivity() {
     //  タッチ位置の前回値
     var mPreTouchPosition = PointD(0.0, 0.0)
     var mPreTouchDistance = 0.0
+    var mMultiTouchCenter = PointD(0.0, 0.0)
     var mZoomOn = false
+    var mMoveOn = false
     //長押しのTouchEvemtの取得のための時間計測用
     var startTime:Long = 0
     var endTime:Long = 0
 
 
     @RequiresApi(Build.VERSION_CODES.O)
-    override fun onTouchEvent(event: MotionEvent): Boolean {
+    override fun  onTouchEvent(event: MotionEvent): Boolean {
         var pos = PointD(event.x.toDouble(), (event.y - mMapViewTop).toDouble())
         var pointCount = event.pointerCount
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {    //  (0)
+                Log.d(TAG, "ACTION_DOWN "+pointCount+" "+mZoomOn+" "+mMoveOn)
                 startTime = event.eventTime
                 //  画面移動の起点
                 mPreTouchPosition = pos
+                mMoveOn = false
+                //  ズームの初期化
+                mPreTouchDistance = 0.0
                 mZoomOn = false
                 //  距離測定
 //                if (mMeasure.mMeasureMode) {
@@ -260,7 +272,8 @@ class MainActivity : AppCompatActivity() {
 //                }
             }
             MotionEvent.ACTION_UP -> {      //  (1)
-                if (!mZoomOn) {
+                Log.d(TAG, "ACTION_UP "+mZoomOn+" "+mMoveOn)
+                if (!mZoomOn && !mMoveOn) {
                     endTime = event.eventTime
                     if ((endTime - startTime) > 500 && pos.distance(mPreTouchPosition) < 50) {
                         //  長押し処理
@@ -270,45 +283,66 @@ class MainActivity : AppCompatActivity() {
                         klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
                         startTime = 0
                         endTime = 0
-                    } else {
-                        //  画面移動
-                        var dx = (mPreTouchPosition.x - pos.x) / mMapData.mCellSize
-                        var dy = (mPreTouchPosition.y - pos.y) / mMapData.mCellSize
-                        mMapData.setMove(dx, dy)
-                        mapDisp(mMapDataDownLoadMode)
                     }
                 }
             }
             MotionEvent.ACTION_MOVE -> {    //  (2)
-
+                if (mZoomOn && 1 < pointCount) {
+                    Log.d(TAG, "ACTION_MOVE zoom "+mZoomOn+" "+mMoveOn)
+                    //  マルチタッチによる拡大縮小
+                    var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
+                    var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
+                    var dis = pos1.distance(pos2)
+                    val rate = (dis - mPreTouchDistance) / mPreTouchDistance
+                    if (0.01 < abs(rate)) {
+//                        mMapData.setZoom(rate, mMultiTouchCenter)
+                        mMapData.setZoom(rate)
+                        mapDisp(mMapDataDownLoadMode)
+                        mPreTouchDistance = dis
+                    }
+                } else if (!mZoomOn) {
+                    Log.d(TAG, "ACTION_MOVE move "+mZoomOn+" "+mMoveOn)
+                    //  画面移動
+                    mMoveOn = true
+                    if (1 < mPreTouchPosition.distance(pos)) {
+                        var dx = (mPreTouchPosition.x - pos.x) / mMapData.mCellSize
+                        var dy = (mPreTouchPosition.y - pos.y) / mMapData.mCellSize
+                        mMapData.setMove(dx, dy)
+                        mapDisp(mMapDataDownLoadMode)
+                        mPreTouchPosition = pos.toCopy()
+                    }
+                }
             }
             MotionEvent.ACTION_POINTER_2_DOWN -> {  //  (261)
+                Log.d(TAG, "ACTION_POINTER_2_DOWN "+pointCount+" "+mZoomOn+" "+mMoveOn)
                 if (1 < pointCount) {
                     //  マルチタッチによる拡大縮小の起点取得
                     var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
                     var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
-                    mPreTouchDistance = pos1.distance(pos2) / mMapData.mCellSize
+                    mMultiTouchCenter = mMapData.screen2Map(pos1.center(pos2))
+                    mPreTouchDistance = pos1.distance(pos2)
                     mZoomOn = true
                 }
             }
             MotionEvent.ACTION_POINTER_DOWN -> {  //  (5)
+                Log.d(TAG, "ACTION_POINTER_DOWN "+pointCount)
                 if (1 < pointCount) {
                     var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
                     var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
-                    mPreTouchDistance = pos1.distance(pos2) / mMapData.mCellSize
+                    mPreTouchDistance = pos1.distance(pos2)
                     mZoomOn = true
                 }
             }
             MotionEvent.ACTION_POINTER_UP -> {  //  (6)
-                if (1 < pointCount) {
-                    //  マルチタッチによる拡大縮小
-                    var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
-                    var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
-                    var dis = pos1.distance(pos2) / mMapData.mCellSize
-                    var ctr = mMapData.screen2Map(pos1.center(pos2))
-                    mMapData.setZoom(((dis - mPreTouchDistance) * 2.0).toInt(), ctr)
-                }
-                mapDisp(mMapDataDownLoadMode)
+//                if (1 < pointCount) {
+//                    //  マルチタッチによる拡大縮小
+//                    var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
+//                    var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
+//                    var dis = pos1.distance(pos2) / mMapData.mCellSize
+//                    var ctr = mMapData.screen2Map(pos1.center(pos2))
+//                    mMapData.setZoom(((dis - mPreTouchDistance) * 2.0), ctr)
+//                }
+//                mapDisp(mMapDataDownLoadMode)
             }
         }
         return true;
@@ -337,8 +371,12 @@ class MainActivity : AppCompatActivity() {
         item9.setIcon(android.R.drawable.ic_menu_set_as)
         val item2 = menu.add(Menu.NONE, MENU02, Menu.NONE, "地図データ編集")
         item2.setIcon(android.R.drawable.ic_menu_set_as)
-        val item10 = menu.add(Menu.NONE, MENU10, Menu.NONE, "アプリ情報")
+        val item10 = menu.add(Menu.NONE, MENU10, Menu.NONE, "アプリデータ情報")
         item10.setIcon(android.R.drawable.ic_menu_set_as)
+        val item11 = menu.add(Menu.NONE, MENU11, Menu.NONE, "ストレージパーミッション")
+        item11.setIcon(android.R.drawable.ic_menu_set_as)
+        val item12 = menu.add(Menu.NONE, MENU12, Menu.NONE, "アプリケーションパーミッション")
+        item12.setIcon(android.R.drawable.ic_menu_set_as)
         return super.onCreateOptionsMenu(menu)
     }
 
@@ -389,14 +427,20 @@ class MainActivity : AppCompatActivity() {
 //                goWikiList()
             }
             MENU08 -> {     //  地図データ一括ダウンロード
-                mapDataDownLoadAll()
+                mapDataDownLoadAllRun()
             }
             MENU09 -> {     //  オンラインとオフラインのモード切替
                 mMapDataDownLoadMode = if (mMapDataDownLoadMode == WebFileDownLoad.OFFLINE) WebFileDownLoad.NORMAL
                 else WebFileDownLoad.OFFLINE
             }
             MENU10 -> {      //  アプリ情報
-                dispAplInf()
+                dispAplDataInf()
+            }
+            MENU11 -> {       //  ストレージ・パーミッション
+                goFileAccessPermision()
+            }
+            MENU12 -> {       //  アプリケーション・パーミッション
+                goApplicatioPermission()
             }
         }
         return super.onOptionsItemSelected(item)
@@ -443,12 +487,7 @@ class MainActivity : AppCompatActivity() {
         spSetMapInfoData()
         spMapType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             @RequiresApi(Build.VERSION_CODES.O)
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mMapTitleNum != position) {
                     mMapData.mMapTitleNum = position
                     mapInit()
@@ -467,14 +506,11 @@ class MainActivity : AppCompatActivity() {
         spZoomLevel.adapter = zoomLevelAdapter
         spZoomLevel.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             @RequiresApi(Build.VERSION_CODES.O)
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mZoom != position) {
+                    mMapData.cellZoomReset()
                     mMapData.setZoomUpPos(mMapData.mZoom, position)
+                    getParameter()
                     mapDisp(mMapDataDownLoadMode)
                 }
             }
@@ -490,18 +526,13 @@ class MainActivity : AppCompatActivity() {
         spColCount.adapter = colCountAdapter
         spColCount.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             @RequiresApi(Build.VERSION_CODES.O)
-            override fun onItemSelected(
-                parent: AdapterView<*>?,
-                view: View?,
-                position: Int,
-                id: Long
-            ) {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mColCount != position + 1) {
                     mMapData.setColCountUpPos(mMapData.mColCount, position + 1)
-                    mapDisp(mMapDataDownLoadMode)
+                    getParameter()
+                    mapDisp(WebFileDownLoad.UPDATE)
                 }
             }
-
             override fun onNothingSelected(parent: AdapterView<*>?) {
 //                TODO("Not yet implemented")
             }
@@ -521,38 +552,38 @@ class MainActivity : AppCompatActivity() {
         //  上に移動
         btMoveUp.setOnClickListener {
             getParameter()
-            mMapData.setMove(0.0, -0.5)
+            mMapData.setMove(0.0, -0.25)
             mapDisp(mMapDataDownLoadMode)
         }
         //  下に移動
         btMoveDown.setOnClickListener {
             getParameter()
-            mMapData.setMove(0.0, 0.5)
+            mMapData.setMove(0.0, 0.25)
             mapDisp(mMapDataDownLoadMode)
         }
         //  左に移動
         btMoveLeft.setOnClickListener {
             getParameter()
-            mMapData.setMove(-0.5, 0.0)
+            mMapData.setMove(-0.25, 0.0)
             mapDisp(mMapDataDownLoadMode)
         }
         //  右に移動
         btMoveRight.setOnClickListener {
             getParameter()
-            mMapData.setMove(0.5, 0.0)
+            mMapData.setMove(0.25, 0.0)
             mapDisp(mMapDataDownLoadMode)
         }
         //  拡大
         btZoomUp.setOnClickListener {
             if (mMapData.mZoom < 20) {
-                mMapData.setZoom(1)
+                mMapData.setZoom(mZoomRate)
                 mapDisp(mMapDataDownLoadMode)
             }
         }
         //  縮小
         btZoomDown.setOnClickListener {
             if (0 < mMapData.mZoom) {
-                mMapData.setZoom(-1)
+                mMapData.setZoom(-mZoomRate)
                 mapDisp(mMapDataDownLoadMode)
             }
         }
@@ -614,13 +645,13 @@ class MainActivity : AppCompatActivity() {
                             dialog, which ->
                         mGpsLocation = !mGpsLocation
                     })
-                    .setNeutralButton("継続", {
-                            dialog, which ->
-                        //  GPS ON
-                        btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-                        mGpsTrace.start(true)
-                        GpsServiceStart(true)
-                    })
+//                    .setNeutralButton("継続", {
+//                            dialog, which ->
+//                        //  GPS ON
+//                        btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+//                        mGpsTrace.start(true)
+//                        GpsServiceStart(true)
+//                    })
                     .show()
             } else {
                 //  GPSトレース終了
@@ -966,7 +997,6 @@ class MainActivity : AppCompatActivity() {
      * ファイル保存ダイヤログを表示して行う
      */
     fun markExport() {
-//        klib.saveFileSelectDialog(this, klib.getPackageNameDirectory(this), "*.csv", true, iDirPath)
         klib.saveFileSelectDialog(this, mDataFolder, "*.csv", true, iDirPath)
     }
 
@@ -1156,7 +1186,9 @@ class MainActivity : AppCompatActivity() {
      */
     fun setViewParameter() {
         mMapView.mColCount = mMapData.mColCount
-        mMapView.mOffset = mMapData.getStartOffset()
+        mMapView.mCellSize = mMapData.mCellSize.toInt()
+//        mMapView.mCellZoom = mMapData.mCellZoom
+        mMapView.mOffset   = mMapData.getStartOffset()
     }
 
     /**
@@ -1164,8 +1196,8 @@ class MainActivity : AppCompatActivity() {
      */
     fun getParameter() {
         mMapData.mMapTitleNum = spMapType.selectedItemPosition
-        mMapData.mZoom = spZoomLevel.selectedItemPosition
-        mMapData.mColCount = spColCount.selectedItemPosition + 1
+        mMapData.mZoom        = spZoomLevel.selectedItemPosition
+        mMapData.mColCount    = spColCount.selectedItemPosition + 1
         mMapData.normarized()
     }
 
@@ -1187,23 +1219,29 @@ class MainActivity : AppCompatActivity() {
      *                                    OFFLINE: ファイルの有無にかかわらずダウンロードなし
      */
     @RequiresApi(Build.VERSION_CODES.O)
-    fun webFileLoad(mapData: MapData, fileUdate: WebFileDownLoad) {
+    fun webFileLoad(mapData: MapData, fileUpdate: WebFileDownLoad) {
         mElevatorDataNo = mapData.mElevatorDataNo
-        val eleZoomMax = mapData.mMapInfoData.getElevatorMaxZoom(mElevatorDataNo)
+        val maxDataCount = mapData.getMaxColCount()
         for (i in mapData.mStart.x.toInt()..mapData.mStart.x.toInt()+mapData.mColCount) {
             for (j in mapData.mStart.y.toInt()..mapData.mStart.y.toInt()+mapData.mRowCount) {
-                if (i <= Math.pow(2.0, mapData.mZoom.toDouble()) &&
-                    j <= Math.pow(2.0, mapData.mZoom.toDouble())) {
                     //  標高データのダウンロード
-                    mMapData.getElevatorDataFile(i, j, fileUdate)
+                    mMapData.getElevatorDataFile(i % maxDataCount, j % maxDataCount, fileUpdate)
                     //  地図ファイルのダウンロード
-                    var downLoadFile = mMapData.getMapData(i, j, fileUdate)
+                    var downLoadFile = mMapData.getMapData(i % maxDataCount, j % maxDataCount, fileUpdate)
                     if (klib.existsFile(downLoadFile))
                         mMapView.setCellImage(i - mapData.mStart.x.toInt(), j - mapData.mStart.y.toInt(), downLoadFile)
                     else
                         mMapView.setCellImage(i - mapData.mStart.x.toInt(), j - mapData.mStart.y.toInt(), "")   //  ダミー
-                }
             }
+        }
+    }
+
+    /**
+     * 地図データの一括ダウンロードの非同期処理
+     */
+    fun mapDataDownLoadAllRun() {
+        GlobalScope.launch {
+            mapDataDownLoadAll()
         }
     }
 
@@ -1218,13 +1256,13 @@ class MainActivity : AppCompatActivity() {
         }
         var mapData = mMapData.copyTo()
         for (zoom in (mMapData.mZoom + 1)..(Math.min(18, mMapData.mZoom + 3))) {
-            Toast.makeText(this, "ズームレベル "+zoom+" をダウンロード中", Toast.LENGTH_LONG).show()
+            mMapView.mMessage = "MapDataDownLod: "+zoom     //  MapViewで表示
             var ctr = mapData.getCenter()
             mapData.mColCount *= 2
-            mapData.setZoom(1, mapData.baseMap2Map(ctr))
+            mapData.setZoom(1.0, mapData.baseMap2Map(ctr))
             mapDataDownLoad(mapData)
         }
-        Toast.makeText(this, "ダウンロード完了", Toast.LENGTH_LONG).show()
+        mMapView.mMessage = ""                              //  MapViewの表示をクリア
     }
 
     /**
@@ -1368,7 +1406,7 @@ class MainActivity : AppCompatActivity() {
 
         mMapView.mGpsTrace = mGpsTrace
         //  GPSのミッションチェック
-        if (klib.checkGpsPermission(this)) {
+        if (klib.checkGpsPermission(this, false)) {
             //  Serviceの設定
             val fromNotification = intent.getBooleanExtra("fromNotification", false)
             if (fromNotification) {
@@ -1385,8 +1423,11 @@ class MainActivity : AppCompatActivity() {
             }
             mGpsEnable = true
         } else {
+            //  アプリのパーミッション設定を開く
+            goApplicatioPermission()
             //  GPS使用不可
-            mGpsEnable = false
+            if (!klib.checkGpsPermission(this, false))
+                mGpsEnable = false
         }
 
         //  GPS使用の有無
@@ -1426,10 +1467,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+
+    /**
+     * アプリデータ情報の表示
+     */
+    fun dispAplDataInf() {
+        var mes = klib.getStrPreferences("ApplicationDataInfo", this, "")
+        if (0 < mes!!.length)
+            klib.messageDialog(this, "アプリデータ情報", mes)
+        else
+            klib.messageDialog(this, "アプリデータ情報", "データ取得中\nもう一回実行してください")
+        GlobalScope.launch {
+            getAplDataInf()
+        }
+    }
+
     /**
      * アプリ情報の表示
      */
-    fun dispAplInf() {
+    fun getAplDataInf() {
         //  地図ファイルデータの数とサイズを取得
         var fileList = klib.getFileList(mBaseFolder, true)
         var filesSize = 0L
@@ -1437,9 +1493,10 @@ class MainActivity : AppCompatActivity() {
             filesSize += file.length()
         }
         var mes = ""
-        mes += "地図ファイル数　　: " + "%,d".format(fileList.count()) + "\n"
-        mes += "ファイルサイズ合計: " + "%,d".format(filesSize)
-        klib.messageDialog(this, "アプリ情報", mes)
+        mes += "地図データファイル数: " + "%,d".format(fileList.count()) + "\n"
+        mes += "ファイルサイズ合計　: " + "%,d".format(filesSize)
+        klib.setStrPreferences(mes, "ApplicationDataInfo", this)
+//        klib.messageDialog(this, "アプリ情報", mes)
     }
 
     /**
@@ -1516,7 +1573,16 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * GPSトレースリスト
+     * アプリケーションのパーミッション設定を開く
+     */
+    fun goApplicatioPermission() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+        startActivity(intent.setData(Uri.parse("package:${packageName}")))
+    }
+
+
+    /**
+     * GPSトレースリストの起動
      */
     @RequiresApi(Build.VERSION_CODES.O)
     fun goGpsTraceList() {
@@ -1524,9 +1590,11 @@ class MainActivity : AppCompatActivity() {
         intent.putExtra("GPSTRACEFOLDER", mGpsTraceFileFolder)
         intent.putExtra("GPSTRACELISTPATH", mGpsTraceListPath)
         gpsTraceListActivityLuncher.launch(intent)
-//        startActivityForResult(intent, REQUESTCODE_GPSTRACELIST)
     }
 
+    /**
+     * GPSトレースリストからの指定処理(座標移動))
+     */
     @RequiresApi(Build.VERSION_CODES.O)
     private val gpsTraceListActivityLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
@@ -1553,7 +1621,6 @@ class MainActivity : AppCompatActivity() {
     fun goMapInfoDataActivity() {
         val intent = Intent(this, MapInfoDataActivity::class.java)
         mapInfoDataActivityLuncher.launch(intent)
-//        startActivityForResult(intent, REQUESTCODE_MAPINFDATA)
     }
 
     private val mapInfoDataActivityLuncher = registerForActivityResult(
@@ -1575,7 +1642,6 @@ class MainActivity : AppCompatActivity() {
             type = "image/*"
         }
         photoGalleryLincher.launch(intent)
-//        startActivityForResult(intent, REQUESTCODE_PHOTOGALLERY)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)

@@ -44,9 +44,10 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     var mMapTitleNum = 0                                //  地図の種類(No)
     var mExt = "png"                                    //  タイル画像の拡張子
     var mCellSize = 256f                                //  タイル画像の大きさ(辺の長さ)
-    var mZoom = 0                                       //  ズームレベル
-    var mColCount = 1                                   //  表示列数
-    var mRowCount = 1                                   //  表示行数
+    var mCellZoom = 1.0                                 //  タイル画像(セル)の拡大率
+    var mZoom = 1                                       //  ズームレベル
+    var mColCount = 2                                   //  表示列数
+    var mRowCount = 2                                   //  表示行数
     var mStart = PointD(0.0, 0.0)                  //  表示開始座標(Map座標)
     var mView = Size(1000, 1000)            //  表示するViewの大きさ
     var mMapUrl = ""                                    //  地図データURL
@@ -144,7 +145,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
         mColCount = Math.min(Math.max(mColCount, 1), 20)
         mColCount = Math.min(mColCount, maxColCount)
         mCellSize = getCellSize().toFloat()
-        mRowCount = getRowCount().toInt()
+        mRowCount = getRowCountF().toInt()
         mMapUrl = mMapInfoData.mMapData[mMapTitleNum][7]
         mElevatorDataNo = mMapInfoData.getElevatorDataNo(mMapInfoData.mMapData[mMapTitleNum][10])
         mBaseMapDataNo = mMapInfoData.getMapDataNo(mMapInfoData.mMapData[mMapTitleNum][11])
@@ -420,15 +421,15 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      *  nextZoom    変更後のzoom値
      */
     fun setZoomUpPos(curZoom: Int, nextZoom: Int) {
-        setZoom(nextZoom - curZoom)
+        setZoom((nextZoom - curZoom).toDouble())
     }
 
     /**
      *  地図の中心で拡大縮小
      *  dZoom : Zoomの増分
      */
-    fun setZoom(dZoom: Int) {
-        var ctr = PointD(mStart.x + mColCount / 2.0, mStart.y + getRowCountF() / 2.0)
+    fun setZoom(dZoom: Double) {
+        var ctr = PointD(mStart.x + getColCountF() / 2.0, mStart.y + getRowCountF() / 2.0)
         setZoom(dZoom, ctr)
     }
 
@@ -437,14 +438,25 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      *  dZoom   Zoom増分
      *  ctr     拡大縮小の中心点(Map座標)
      */
-    fun setZoom(dZoom: Int, ctr: PointD) {
-        Log.d(TAG, "setZoom: "+mZoom+" "+dZoom)
-        if (mZoom + dZoom <= mMapInfoData.getMapDataMaxZoom(mMapTitleNum)) {
-            mStart.x = ctr.x * Math.pow(2.0, dZoom.toDouble()) - mColCount / 2.0
-            mStart.y = ctr.y * Math.pow(2.0, dZoom.toDouble()) - getRowCountF() / 2.0
-            mZoom += dZoom
+    fun setZoom(dZoom: Double, ctr: PointD) {
+        mCellZoom += dZoom
+        var zoom = mCellZoom.toInt() - 1
+        mCellZoom = 1 + mCellZoom % 1.0
+        mCellSize = getCellSize().toFloat()
+        if (mZoom + zoom <= mMapInfoData.getMapDataMaxZoom(mMapTitleNum)) {
+            mStart.x = ctr.x * Math.pow(2.0, zoom.toDouble()) - getColCountF() / 2.0
+            mStart.y = ctr.y * Math.pow(2.0, zoom.toDouble()) - getRowCountF() / 2.0
+            mZoom += zoom
             normarized()
         }
+    }
+
+    /**
+     * CellSizeとCellZoomをリセットする
+     */
+    fun cellZoomReset() {
+        mCellZoom = 1.0
+        mCellSize = getCellSize().toFloat()
     }
 
     /**
@@ -477,9 +489,8 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun setLocation(location: PointD) {
         var ctr = baseMap2Map(location)
-        mStart.x = ctr.x - mColCount / 2.0
+        mStart.x = ctr.x - getColCountF() / 2.0
         mStart.y = ctr.y - getRowCountF() / 2.0
-        Log.d(TAG, "setLocation: " + mStart.x + "," + mStart.y)
     }
 
     /**
@@ -498,8 +509,8 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun loadParameter() {
         mMapTitleNum = klib.getIntPreferences("MapDataID", context)
-        mZoom = klib.getIntPreferences("MapZoomLevel", context)
-        mColCount = klib.getIntPreferences("MapColCount", context)
+        mZoom = klib.getIntPreferences("MapZoomLevel", 1, context)
+        mColCount = klib.getIntPreferences("MapColCount", 2, context)
         mStart.x = klib.getFloatPreferences("MapStartX", context).toDouble()
         mStart.y = klib.getFloatPreferences("MapStartY", context).toDouble()
         normarized()
@@ -511,7 +522,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      *  path        保存ファイルパス
      */
     fun saveImageFileSet(path: String) {
-        Log.d(TAG,"saveImageFileSet2: "+mImageFileSet.count()+" "+path)
         if (mImageFileSet.count() == 0)
             return
         var dataList = mutableListOf<String>()
@@ -522,7 +532,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     }
 
     fun saveImageFileSet(){
-        Log.d(TAG,"saveImageFileSet: "+mImageFileSetPath)
         saveImageFileSet(mImageFileSetPath)
     }
 
@@ -543,7 +552,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
 
     fun loadImageFileSet() {
         loadImageFileSet(mImageFileSetPath)
-        Log.d(TAG,"loadImageFileSet: "+mImageFileSet.count()+" "+mImageFileSetPath)
     }
 
     /**
@@ -565,8 +573,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun loadColorLegend() {
         var path = mDataFolder + "/legend_" + mMapTitle + ".csv"
-        Log.d(TAG,"loadColorLegend: " + path)
-
         mColorLegend.clear()
         if (klib.existsFile(path)) {
             var listData = klib.loadCsvData(path)
@@ -593,19 +599,27 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      *  return      タイル画像の1篇の長さ(スクリーン座標)
      */
     fun getCellSize(): Double {
-        return if (mColCount === 1) {
-            return if (mView.width < mView.height) mView.width.toDouble() else mView.height.toDouble()
+        return if (mColCount == 1) {
+            if (mView.width < mView.height) mView.width.toDouble() else mView.height.toDouble()
         } else {
-            return mView.width.toDouble() / mColCount.toDouble()
-        }
+            mView.width.toDouble() / mColCount.toDouble()
+        } * mCellZoom
     }
 
     /**
      *  画面縦方向のタイル数を求める(整数単位に切上げ)
      *  return  表示列数(Int)
      */
-    fun getRowCount(): Double {
-        return Math.ceil(mColCount.toDouble() * mView.height / mView.width)
+    fun getRowCount(): Int {
+        return mView.height / mCellSize.toInt()
+    }
+
+    /**
+     *  画面横方向のタイル数を求める(Double)
+     *  return  表示列数(Double)
+     */
+    fun getColCountF(): Double {
+        return  (mView.width / mCellSize).toDouble()
     }
 
     /**
@@ -613,7 +627,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      *  return  表示列数(Double)
      */
     fun getRowCountF(): Double {
-        return mColCount.toDouble() * mView.height / mView.width
+        return  (mView.height / mCellSize).toDouble()
     }
 
     /**
@@ -632,8 +646,12 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
         return map2BaseMap(getMapCenter())
     }
 
+    /**
+     *  表示地図の中心座標(Map座標)の取得
+     *  return  中心座標(Map座標)
+     */
     fun getMapCenter(): PointD {
-        return PointD(mStart.x + mColCount.toDouble() / 2.0, mStart.y + getRowCountF() / 2.0)
+        return PointD(mStart.x + getColCountF() / 2.0, mStart.y + getRowCountF() / 2.0)
     }
 
     /**
@@ -642,7 +660,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun getArea(): RectD {
         var bsp = map2BaseMap(mStart)
-        var bep = map2BaseMap(PointD(mStart.x + mColCount, mStart.y + getRowCountF()))
+        var bep = map2BaseMap(PointD(mStart.x + getColCountF(), mStart.y + getRowCountF()))
         return RectD(bsp, bep)
     }
 
@@ -652,7 +670,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun getAreaCoordinates(): RectD {
         var bsp = klib.baseMap2Coordinates(map2BaseMap(mStart))
-        var bep = klib.baseMap2Coordinates(map2BaseMap(PointD(mStart.x + mColCount, mStart.y + getRowCountF())))
+        var bep = klib.baseMap2Coordinates(map2BaseMap(PointD(mStart.x + getColCountF(), mStart.y + getRowCountF())))
         return RectD(bsp, bep)
     }
 

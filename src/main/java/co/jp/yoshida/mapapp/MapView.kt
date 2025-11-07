@@ -18,13 +18,15 @@ import java.time.format.DateTimeFormatter
 class MapView(context: Context, var mMapData: MapData): View(context) {
     val TAG = "MapView"
 
-    var mWidth = mMapData.mView.width
-    var mHeight = mMapData.mView.height
-    var mColCount = 1
-    var mRowCount = 1
-    var mCellSize = 0
+    var mWidth = mMapData.mView.width       //  地図のlinerLayoutの幅(MainActivityで取得)
+    var mHeight = mMapData.mView.height     //  地図のlinerLayoutの高さ(MainActivityで取得)
+    var mColCount = 2                       //  セルの横方向ま数
+    var mRowCount = 2                       //  セルの縦方向の数
+    var mCellSize = 0                       //  セルの大きさ
+
     var mGCells = mutableListOf<GCell>()
     var mOffset = PointD(0.0, 0.0)
+
     var mMarkList = MarkList()              //  マークのデータ
 //    var mMeasure = Measure()                //  距離測定実行中のデータ
     var mGpsTrace = GpsTrace()              //  GPSトレース実行中のデータ
@@ -34,6 +36,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     var mLastSpeedAveSize = 16              //  GPSトレース速度の移動平均データ数(表示用)
     var mCenterColor = ""                   //  中心の色(凡例で使用)
     var mComment = ""                       //  コメント表示(凡例データなどせ)
+    var mMessage = ""                       //  非同期のメッセージ表示
     var mInfoTextSize = 32.0                //  画面左上の情報表示文字サイズ
     var mDispDateTime = mutableListOf<LocalDateTime>()
     @RequiresApi(Build.VERSION_CODES.O)
@@ -43,6 +46,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     val kdraw = KDraw()
 
     init {
+        mCellSize = (mWidth / mColCount).toInt()
         setCellBoard()
     }
 
@@ -65,7 +69,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         mGpsTraceList.draw(canvas, mMapData)
         //  中心線
         drawCross(canvas)
-        //  座標と標高の表示
+        //  座標と標高、凡例の表示
         drawCoordinates(canvas, mMapData)
         //  縮尺表示
         drawScaler()
@@ -118,6 +122,11 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
             y += mInfoTextSize.toFloat() + 10f
             kdraw.drawTextWithBox(mComment, PointD(x.toDouble(), y.toDouble()))
         }
+        //  メッセージ表示(非同期処理など)
+        if (0 < mMessage.length) {
+            y += mInfoTextSize.toFloat() + 10f
+            kdraw.drawTextWithBox(mMessage, PointD(x.toDouble(), y.toDouble()))
+        }
         //  気象データなどの測定時間と予想時刻の表示
         if (1 < mDispDateTime.size) {
             y += mInfoTextSize.toFloat() + 10f
@@ -162,6 +171,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         if (mWidth <= 0 || mHeight <= 0 || mColCount == 0 || mRowCount == 0)
             return
         setCelSize()
+        Log.d(TAG, "setCellBoard:Zoom "+mColCount+" "+mCellSize)
         mGCells.clear()
         var sx = 0f
         var width = 0f
@@ -211,7 +221,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
 
     //  列数からセルサイズと行数を求める
     fun setCelSize() {
-        mCellSize = mWidth / mColCount
+//        mCellSize = (mWidth * mCellZoom / mColCount).toInt()
         mRowCount = mHeight / mCellSize + 1
     }
 
