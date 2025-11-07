@@ -14,7 +14,7 @@
 
 
 ### 起動画面
-<img src="image/MapApp_Main.png" width="80%">
+<img src="image/MapApp_MainOpe.png" width="80%">
 
 **上部選択リスト** : グループ名と記録中のGPXファイル名が表示される  
 **下部ボタン** : 目的地をリスト表示、選択した目的地の方向と距離を表示  
@@ -29,7 +29,7 @@
 **アプリ情報** :    
 
 ### 目的地リスト選択
-<img src="image/MapApp_Main_MapMenu.png" width="80%">
+<img src="image/MapApp_Main_MapMenu.png" width="60%">
 
 ### 標準地図
 <img src="image/MapApp_Main_標準地図.png" width="80%">
@@ -54,7 +54,7 @@
 <img src="image/MapApp_Main_GPSTrace.png" width="80%">
 
 ### GPSトレースリスト
-<img src="image/MapApp_GPSTraceList.png" width="80%">
+<img src="image/MapApp_GPSTraceListOpe.png" width="80%">
 
 ### GPSトレースリストの操作メニュー
 <img src="image/MapApp_GPSTraceListMenu.png" width="80%">
