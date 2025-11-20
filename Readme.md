@@ -56,6 +56,9 @@
 ### GPSトレースリスト
 <img src="image/MapApp_GPSTraceListOpe.png" width="80%">
 
+### GPSトレースリストグラフ
+<img src="image/MapApp_GPSTraceListGraph.png" width="80%">
+
 ### GPSトレースリストの操作メニュー
 <img src="image/MapApp_GPSTraceListMenu.png" width="80%">
 
@@ -92,6 +95,7 @@ Filesアプリでダウンロードしたファイル(mapapp-debug.apk)をタッ
 
 
 履歴  
+2025+11/20 GPSトレースリストのグラフ化を追加  
 2025/11/06 無段階の地図拡大縮小に対応、タッチ操作による地図の移動ズームに対応  
 2025/11/06 地図データの一括ダウンロードを非同期処理に変更  
 2025/10/15 GPSトレース開始時にBeep音追加、GPSトレースグラフに歩数を追加  

@@ -590,7 +590,6 @@ class MainActivity : AppCompatActivity() {
 
         //  GPSデータ取得の開始と停止
         btGpsOn.setOnClickListener {
-            mGpsLocation = !mGpsLocation
             setGpsButton()
         }
 
@@ -629,7 +628,7 @@ class MainActivity : AppCompatActivity() {
     fun setGpsButton(cont: Boolean? = null) {
         if (cont == null) {
             //  ダイヤログ確認あり
-            if (mGpsLocation) {
+            if (!mGpsLocation) {
                 //  GPSトレース開始
                 AlertDialog.Builder(this)
                     .setTitle("開始確認")
@@ -640,10 +639,10 @@ class MainActivity : AppCompatActivity() {
                         btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
                         mGpsTrace.start()
                         GpsServiceStart()
+                        mGpsLocation = true
                     })
                     .setNegativeButton("キャンセル", {
                             dialog, which ->
-                        mGpsLocation = !mGpsLocation
                     })
 //                    .setNeutralButton("継続", {
 //                            dialog, which ->
@@ -664,6 +663,7 @@ class MainActivity : AppCompatActivity() {
                         btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
                         mGpsTrace.end()
                         GpsServiceEnd(false)
+                        mGpsLocation = false
                     })
                     .setNeutralButton("保存終了", {
                             dialog, which ->
@@ -671,10 +671,10 @@ class MainActivity : AppCompatActivity() {
                         btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
                         mGpsTrace.end()
                         GpsServiceEnd()
+                        mGpsLocation = false
                     })
                     .setNegativeButton("キャンセル", {
                             dialog, which ->
-                        mGpsLocation = !mGpsLocation
                     })
                     .show()
             }
@@ -1623,6 +1623,9 @@ class MainActivity : AppCompatActivity() {
         mapInfoDataActivityLuncher.launch(intent)
     }
 
+    /**
+     * 地図データの編集画面を開く
+     */
     private val mapInfoDataActivityLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -1641,11 +1644,14 @@ class MainActivity : AppCompatActivity() {
             addCategory(Intent.CATEGORY_OPENABLE)
             type = "image/*"
         }
-        photoGalleryLincher.launch(intent)
+        photoGalleryLuncher.launch(intent)
     }
 
+    /**
+     * フォトギャラリーの起動
+     */
     @RequiresApi(Build.VERSION_CODES.O)
-    private val photoGalleryLincher = registerForActivityResult(
+    private val photoGalleryLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             //  写真の座標位置に移動

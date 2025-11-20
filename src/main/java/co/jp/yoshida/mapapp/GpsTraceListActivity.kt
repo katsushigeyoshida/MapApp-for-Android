@@ -33,6 +33,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     lateinit var btSort: Button
     lateinit var btRoute: Button
     lateinit var btSelect: Button
+    lateinit var btGraph: Button
     lateinit var lvDataList: ListView
 
     val REQUESTCODE_GPXEDIT = 3
@@ -135,6 +136,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         btSort     = binding.button19
         btRoute    = binding.button20
         btSelect   = binding.button25
+        btGraph    = binding.button
         lvDataList = binding.gpsTraceListView
 
         setSpinnerData()
@@ -144,8 +146,10 @@ class GpsTraceListActivity : AppCompatActivity() {
         spYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
-                if (mSpinnerEnabled)
+                if (mSpinnerEnabled) {
+                    setSpinnerCategory(getCurYear())
                     setDataList()
+                }
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
@@ -224,6 +228,13 @@ class GpsTraceListActivity : AppCompatActivity() {
             } else {
                 klib.setMenuDialog(this, "削除メニュー", mRemoveMenu, iRemoveOperation)
             }
+        }
+
+        /**
+         * GpsTraceListのグラフ表示
+         */
+        btGraph.setOnClickListener {
+            goGpsTraceListGraph()
         }
 
         /**
@@ -549,7 +560,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     //  指定のフォルダーにGPXファイルを出力
     var iGpsExportOperation = Consumer<String> { s ->
         if (0 <= mSelectListPosition) {
-            var gpsTraceList = mutableListOf<GpsTraceList.GpsTraceData>()
+            var gpsTraceList = mutableListOf<GpsTraceData>()
             gpsTraceList.add(mGpsTraceList.mFilterDataList[mSelectListPosition])
             GpsTraceList.gpxExport(gpsTraceList, s)
         }
@@ -581,6 +592,13 @@ class GpsTraceListActivity : AppCompatActivity() {
         }
     }
 
+    fun goGpsTraceListGraph() {
+        val intent = Intent(this, GpsTraceListGraphActivity::class.java)
+        intent.putExtra("GPSTRACEFOLDER", mGpsTraceFileFolder)
+        intent.putExtra("GPSTRACELISTPATH", mGpsTraceListPath)
+        startActivity(intent)
+    }
+
     /**
      * 地図の中心を設定して地図表示に戻る
      * coordinate       位置座標文字列
@@ -601,9 +619,9 @@ class GpsTraceListActivity : AppCompatActivity() {
      * 選択されたItemリストの作成
      * return   GpsTraceDataリスト
      */
-    fun selectItemList():List<GpsTraceList.GpsTraceData> {
+    fun selectItemList():List<GpsTraceData> {
         var checked = lvDataList.checkedItemPositions
-        var gpsTraceList = mutableListOf<GpsTraceList.GpsTraceData>()
+        var gpsTraceList = mutableListOf<GpsTraceData>()
         for (i in 0..checked.size()-1){
             if (checked.valueAt(i)) {
                 gpsTraceList.add(mGpsTraceList.mFilterDataList[checked.keyAt(i)])
@@ -616,8 +634,8 @@ class GpsTraceListActivity : AppCompatActivity() {
      * 表示リストの全データのリスト取得
      * return       データリスト
      */
-    fun dispItemList():List<GpsTraceList.GpsTraceData> {
-        var dataList = mutableListOf<GpsTraceList.GpsTraceData>()
+    fun dispItemList():List<GpsTraceData> {
+        var dataList = mutableListOf<GpsTraceData>()
         for (i in 0..lvDataList.size - 1){
             dataList.add(mGpsTraceList.mFilterDataList[i])
         }
@@ -672,14 +690,13 @@ class GpsTraceListActivity : AppCompatActivity() {
         spGroup.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
             mGpsTraceList.getGroupList(mGpsTraceList.mAllListName))
         //  分類をspinnerに登録
-        spCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
-            mGpsTraceList.getCategoryList(mGpsTraceList.mAllListName))
+        setSpinnerCategory(getCurYear())
 
         //  選択値を元に戻す
         val yearPos     = if (firstYearPos && 1 <spYear.adapter.count) 1
                           else mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(yearItem)
         val groupPos    = mGpsTraceList.getGroupList(mGpsTraceList.mAllListName).indexOf(groupItem)
-        val categoryPos = mGpsTraceList.getCategoryList(mGpsTraceList.mAllListName).indexOf(categoryItem)
+        val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(categoryItem)
         if (0 <= yearPos)
             spYear.setSelection(yearPos)
         if (0 <= groupPos)
@@ -687,6 +704,24 @@ class GpsTraceListActivity : AppCompatActivity() {
         if (0 <= categoryPos)
             spCategory.setSelection(categoryPos)
         mSpinnerEnabled = true
+    }
+
+    /**
+     * 設定されているspinnerの念を取得(「すべて」は0とする)
+     */
+    fun getCurYear(): Int {
+        if (spYear.selectedItemPosition < 1)
+            return 0
+        else
+            return spYear.selectedItem.toString().substring(0, 4).toInt()
+    }
+
+    /**
+     * categoryのspinner設定を年に合わせて設定する
+     */
+    fun setSpinnerCategory(year: Int) {
+        spCategory.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
+            mGpsTraceList.getCategoryList(year,mGpsTraceList.mAllListName))
     }
 
     /**

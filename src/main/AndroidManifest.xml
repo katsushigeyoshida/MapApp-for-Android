@@ -18,6 +18,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication4">
         <activity
+            android:name=".GpsTraceListGraphActivity"
+            android:exported="false" />
+        <activity
             android:name=".MapInfoDataActivity"
             android:exported="false" />
         <activity

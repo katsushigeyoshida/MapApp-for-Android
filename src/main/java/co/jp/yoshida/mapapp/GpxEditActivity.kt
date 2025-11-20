@@ -159,7 +159,7 @@ class GpxEditActivity : AppCompatActivity() {
             if (mNewFile && 0 <= mGpsTraceList.findGpsFile(edGpxPath.text.toString()) ){
                 klib.messageDialog(this, "確認", "既にファイルが登録されています")
             } else {
-                val gpsFileData = GpsTraceList.GpsTraceData()
+                val gpsFileData = GpsTraceData()
                 gpsFileData.mFilePath = edGpxPath.text.toString()
                 gpsFileData.loadGpsData(false)
                 gpsFileData.mTitle = edTitle.text.toString()
@@ -238,7 +238,7 @@ class GpxEditActivity : AppCompatActivity() {
     fun setGpxFileInfo(gpxFilePath: String, title: String = "") {
         if (!klib.existsFile(gpxFilePath))
             return
-        val gpsFileData = GpsTraceList.GpsTraceData()
+        val gpsFileData = GpsTraceData()
         gpsFileData.mFilePath = gpxFilePath
         gpsFileData.loadGpsData()
         edTitle.setText(if (title.isEmpty()) klib.getFileNameWithoutExtension(gpxFilePath) else title)

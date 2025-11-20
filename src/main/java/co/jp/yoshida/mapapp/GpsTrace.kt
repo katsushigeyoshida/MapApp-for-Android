@@ -67,7 +67,7 @@ class GpsTrace {
         mTraceOn = true
         klib.setBoolPreferences(true, "GpsTraceContinue", mC)
         val ldt = LocalDateTime.now()
-        val formatter = DateTimeFormatter.ofPattern("YYYYMMdd_HHmmss")
+        val formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
         klib.setStrPreferences(ldt.format(formatter), "GpsTraceStartTime", mC)
     }
 

@@ -1,5 +1,6 @@
 package co.jp.yoshida.mapapp
 
+//import java.util.function.Consumer
 import android.Manifest
 import android.app.ActivityManager
 import android.content.ClipData
@@ -24,7 +25,6 @@ import android.os.Environment
 import android.preference.PreferenceManager
 import android.util.Log
 import android.webkit.MimeTypeMap
-import android.widget.AdapterView
 import android.widget.EditText
 import android.widget.Toast
 import androidx.annotation.RequiresApi
@@ -43,10 +43,11 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
-//import java.util.function.Consumer
 import kotlin.math.abs
+import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.log
 import kotlin.math.log10
@@ -368,6 +369,30 @@ class KLib {
     }
 
     //  ---  数値処理  ---
+
+    /**
+     * 指定の上位桁数で丸める(切り捨て)
+     * value    数値
+     * n        丸める有効桁
+     * return   丸めた数値
+     */
+    fun roundFloor(value: Double, n: Int): Double {
+        val mag = floor(log10(value))
+        val magPow = 10.0.pow(mag - n + 1)
+        return floor(value / magPow) * magPow
+    }
+
+    /**
+     * 指定の上位桁数で丸める(切り上)
+     * value    数値
+     * n        丸める有効桁
+     * return   丸めた数値
+     */
+    fun roundCeil(value: Double, n: Int): Double {
+        val mag = floor(log10(value))
+        val magPow = 10.0.pow(mag - n + 1)
+        return ceil(value / magPow) * magPow
+    }
 
     /**
      * 最上位桁が1,2,5になるように数値を丸める
@@ -796,7 +821,8 @@ class KLib {
     }
 
     /**
-     *  日付文字列に日付型に変換
+     *  日付文字列(ISO)に日付型(Date)に変換(日付と時刻はTで区切るタイムゾーン:UTCはZを追加,JSTは+09:00を追加))
+     *  ISO8601形式 : 基本形式 YYYYMMDDThhmmss+0900   拡張形式 YYYY-MM-DDThh:mm:ss+09:00
      *  対応形式
      *  "yyyy-MM-dd'T'HH:mm:ss'Z'"
      *  "yyyy-MM-dd HH:mm:ss"
@@ -834,6 +860,123 @@ class KLib {
     }
 
     /**
+     * Date を週内の日数を実数(時間は小数点以下)で変換
+     */
+    fun date2DayOfWeek(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return (((cal.get(Calendar.SECOND) / 60.0 + cal.get(Calendar.MINUTE)) / 60.0 +
+                cal.get(Calendar.HOUR_OF_DAY)) / 24.0) + cal.get(Calendar.DAY_OF_WEEK)
+    }
+
+    /**
+     * Date を月内の日数を実数(時間は小数点以下)で変換
+     */
+    fun date2DayOfMonth(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return (((cal.get(Calendar.SECOND) / 60.0 + cal.get(Calendar.MINUTE)) / 60.0 +
+                cal.get(Calendar.HOUR_OF_DAY)) / 24.0) + cal.get(Calendar.DAY_OF_MONTH)
+    }
+
+    /**
+     * Dateを年内の日数を実数(時間は小数点以下)で変換
+     */
+    fun date2DayOfYear(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return cal.get(Calendar.DAY_OF_YEAR).toDouble() + cal.get(Calendar.HOUR_OF_DAY) / 24.0 +
+                cal.get(Calendar.MINUTE) / 24.0 / 60.0 + cal.get(Calendar.SECOND) / 24.0 / 3600.0
+    }
+
+    /**
+     * 年内の週数を実数(時間は小数点以下)で求める(1-53.xxxx)
+     */
+    fun date2WeekOfYear(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        val month = cal.get(Calendar.MONTH)
+        var weekNo = cal.get(Calendar.WEEK_OF_YEAR)
+        if (11 <= month && weekNo < 2) {
+            cal.add(Calendar.DAY_OF_YEAR, -7)
+            weekNo = cal.get(Calendar.WEEK_OF_YEAR) + 1
+            cal.add(Calendar.DAY_OF_YEAR, 7)
+        }
+        return (((((cal.get(Calendar.SECOND) / 60.0 + cal.get(Calendar.MINUTE)) / 60.0 +
+                cal.get(Calendar.HOUR_OF_DAY)) / 24.0) + cal.get(Calendar.DAY_OF_WEEK)) / 7.0) +
+                weekNo
+    }
+
+    /**
+     * 年内の週数を求める(1-53)
+     * 通常の WeekOfYear では最終週は次の年の1になるのをなくす
+     */
+    fun getWeekOfYear(date: Date): Int {
+        val cl = Calendar.getInstance()
+        cl.setTime(date)
+        var weekNo = cl.get(Calendar.WEEK_OF_YEAR)
+        if (weekNo == 1 && cl.get(Calendar.MONTH) == 11) {
+            cl.add(Calendar.DATE, -7)
+            weekNo = cl.get(Calendar.WEEK_OF_YEAR) + 1
+        }
+        return weekNo
+    }
+
+    /**
+     * 年内の月数を実数(日,時間は小数点以下)で求める(1.0-12.999..)
+     */
+    fun date2MonthOfYear(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return (((((cal.get(Calendar.SECOND) / 60.0 + cal.get(Calendar.MINUTE)) / 60.0 +
+                cal.get(Calendar.HOUR_OF_DAY)) / 24.0) + cal.get(Calendar.DAY_OF_MONTH) - 1) / date2MaxDayOfMonth(date)) +
+                cal.get(Calendar.MONTH) + 1
+    }
+
+    /**
+     * 年の取得
+     */
+    fun date2Year(date: Date): Int {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return cal.get(Calendar.YEAR)
+    }
+
+    /**
+     * Date の月の１日目を年内の日に変換
+     */
+    fun date2MonthOfYearDay(date: Date): Double {
+        val cal = Calendar.getInstance()
+        cal.setTime(date)
+        return date2DayOfYear(setDate(cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, 1))
+    }
+
+    /**
+     * 月の最大日数を求める
+     */
+    fun date2MaxDayOfMonth(date: Date): Int {
+        val cl = Calendar.getInstance()
+        cl.setTime(date)
+//        return LocalDate.of(cl.get(Calendar.YEAR), cl.get(Calendar.MONTH)+1, 1).lengthOfMonth()
+        val cal = Calendar.getInstance()
+        cal.set(cl.get(Calendar.YEAR), cl.get(Calendar.MONTH), 1)
+        return cal.getActualMaximum(Calendar.DAY_OF_MONTH)
+    }
+
+    /**
+     * Date()に日時(UTC)を設定
+     * year: 年, month: 月, day: 日
+     * return : Date()
+     */
+    fun setDate(year: Int, month: Int, day: Int): Date {
+        val calendar = Calendar.getInstance()
+        // 年・月・日・時・分・秒を設定
+        // 月は 0 始まり（1月=0, 12月=11）なので注意
+        calendar.set(year, month - 1, day, 0, 0, 0)
+        return calendar.time
+    }
+
+    /**
      * 経過時間を文字列に変換
      *  var lap = Date(date.getTime() - date2.getTime())
      *  println(lap2String(lap.getTime()))
@@ -853,6 +996,13 @@ class KLib {
     }
 
     /**
+     * 秒を HH:mm:ss のフォーマットに変換
+     */
+    fun Sec2Time(sec: Long): String {
+        return String.format("%02d:%02d:%02d", sec / 3600, (sec / 60) % 60, sec % 60)
+    }
+
+    /**
      * 日時を分単位で丸める
      * et           日時
      * min          丸める分
@@ -864,6 +1014,72 @@ class KLib {
         val dt = ChronoUnit.MINUTES.between(st, et)
         val rt = st.plusMinutes(floor(dt.toFloat() / min.toFloat()).toLong() * min)
         return rt
+    }
+
+    /**
+     * Dateクラスからユリウス美を求める
+     */
+    fun Date2JulianDay(date: Date): Int {
+        val cl = Calendar.getInstance()
+        cl.setTime(date)
+        cl.timeZone = TimeZone.getTimeZone("Asia/Tokyo")
+        return Date2JulianDay(cl.get(Calendar.YEAR), cl.get(Calendar.MONTH)+1, cl.get(Calendar.DAY_OF_MONTH))
+    }
+
+    /**
+     * Dateクラスから時間部分を日で取得
+     */
+    fun Date2DayTime(date: Date): Double {
+        val cl = Calendar.getInstance()
+        cl.setTime(date)
+        cl.timeZone = TimeZone.getTimeZone("Asia/Tokyo")
+        return cl.get(Calendar.HOUR_OF_DAY)/24.0+cl.get(Calendar.MINUTE)/24.0/60+cl.get(Calendar.SECOND)/24.0/3600
+    }
+
+    /**
+     * 年月日からユリウス日を求める
+     * @param date yyyy/mm/dd or yyyymmdd
+     * @return      ユリウス日
+     */
+    fun Date2JulianDay(date: String): Int {
+        var year = 0
+        var month = 0
+        var day = 0
+        if (0 <= date.indexOf('/')) {
+            val str = date.split("/")
+            if (2 < str.count()) {
+                year = str[0].toInt()
+                month = str[1].toInt()
+                day = str[2].toInt()
+            } else
+                return  0
+        } else if (8 <= date.length) {
+            year = date.substring(0, 4).toInt()
+            month = date.substring(4, 6).toInt()
+            day = date.substring(6, 8).toInt()
+        } else
+            return 0
+        return Date2JulianDay(year, month, day)
+    }
+
+    /**
+     * 歴日からユリウス日に変換
+     * year:2018年, month: 10月, day: 5日
+     * return 日
+     */
+    fun Date2JulianDay(year: Int, month: Int, day: Int): Int {
+        var year = year
+        var month = month
+        var day = day
+        if (month <= 2) {
+            month += 12
+            year--
+        }
+        if ((year * 12 + month) * 31 + day >= (1582 * 12 + 10) * 31 + 15) {
+            //  1582/10/15以降はグレゴリオ暦
+            day += 2 - year / 100 + year / 400
+        }
+        return floor(365.25 * (year + 4716)).toInt() + (30.6001 * (month + 1)).toInt() + day - 1524
     }
 
     //  ---  ファイル処理  ---
