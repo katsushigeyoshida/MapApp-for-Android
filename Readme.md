@@ -2,6 +2,7 @@
 
 旧版のMapAppを新しい開発環境(Android Studio Narwhal)で再作成。  
 大きな変更はGPSデータファイルなどを共通ストレージ(/strage/emulated/0/DCIM/mapapp)に変更、あと細かいところを修正。  
+文末にインストール方法を記載している。  
 
 ### 機能
 ・国土地理院の地図データなどをいろいろな地図を表示する  
@@ -19,57 +20,65 @@
 **上部選択リスト** : グループ名と記録中のGPXファイル名が表示される  
 **下部ボタン** : 目的地をリスト表示、選択した目的地の方向と距離を表示  
 
+
+### 地図リスト選択
+<img src="image/MapApp_MapList.png" width="60%">
+
+### オプションリスト選択
+<img src="image/MapApp_OptionMenu.png" width="60%">
+
 #### オプションメニュー
 **地図情報** : 現在地をグーグルマップで開く  
+**登録画面** :  
 **GPSトレースリスト** :  
 **マーク操作** : 目的地をグーグルマップで開く  
 **写真の位置** : 設定画面を開く  
 **地図データ一括取込み** : 
+**オフライン** :  
 **地図データ編集** : 
-**アプリ情報** :    
-
-### 目的地リスト選択
-<img src="image/MapApp_Main_MapMenu.png" width="60%">
+**アプリデータ情報** :    
+**ストレージパーミッション** :  
+**アプリケーションパーミッション** :  
 
 ### 標準地図
-<img src="image/MapApp_Main_標準地図.png" width="80%">
+<img src="image/MapApp_Main_標準地図.png" width="60%">
 
 ### 色別標高図
-<img src="image/MapApp_Main_色別標高図.png" width="80%">
+<img src="image/MapApp_Main_色別標高図.png" width="60%">
 
 ### 航空写真地図
-<img src="image/MapApp_Main_航空写真.png" width="80%">
+<img src="image/MapApp_Main_航空写真.png" width="60%">
 
 ### 気象庁の雨雲の動きと白地図の重ね合わせ
-<img src="image/MapApp_Main_雨雲の動き.png" width="80%">
+<img src="image/MapApp_Main_雨雲の動き.png" width="60%">
 
 ### 20万分の1日本シームレス地質図
 凡例ファイル(data/legend_seamless_v2.csv)を内部ストレージのDCIM/MapAppのフォルダに入れると地質名が表示できる  
-<img src="image/MapApp_Main_日本シームレス地質図.png" width="80%">
+<img src="image/MapApp_Main_日本シームレス地質図.png" width="60%">
 
 ### 地図データの設定編集
-<img src="image/MapApp_MapEdit.png" width="80%">
+<img src="image/MapApp_MapEditOpe.png" width="80%">
   
 ### GPSのトレース表示
-<img src="image/MapApp_Main_GPSTrace.png" width="80%">
+<img src="image/MapApp_Main_GPSTrace.png" width="60%">
 
 ### GPSトレースリスト
 <img src="image/MapApp_GPSTraceListOpe.png" width="80%">
 
 ### GPSトレースリストグラフ
-<img src="image/MapApp_GPSTraceListGraph.png" width="80%">
+<img src="image/MapApp_GPSTraceListGraphOpe.png" width="80%">
 
 ### GPSトレースリストの操作メニュー
-<img src="image/MapApp_GPSTraceListMenu.png" width="80%">
+<img src="image/MapApp_GPSTraceListMenu.png" width="60%">
 
 ### GPSトレースファイルの登録編集
-<img src="image/MapApp_GPSTraceEdit.png" width="80%">
+<img src="image/MapApp_GPSTraceEditOpe.png" width="80%">
 
 ### GPSトレースデータのグラフ表示
-<img src="image/MapApp_GpsTraceGraph.png" width="80%">
+<img src="image/MapApp_GpsTraceGraph.png" width="60%">
 
 ### マークデータの編集画面
-<img src="image/MapApp_MarkEdit.png" width="80%">
+<img src="image/MapApp_MarkEdit.png" width="60%">
 
 #### インストール方法
 実行ファイルのダウンロードは[mapapp-debug.apk](mapapp-debug.apk)をダウンロードする。  
