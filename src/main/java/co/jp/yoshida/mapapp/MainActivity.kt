@@ -604,7 +604,32 @@ class MainActivity : AppCompatActivity() {
         btGpsTraceList.setOnClickListener {
             goGpsTraceList()
         }
+
+        //  時刻設定の地図データの予測時間切り替え
+        btClockInc.setOnClickListener {
+            var timeString = mutableListOf<String>()
+            var countMax = if (30 <= mMapData.mMapInfoData.mDateTimeInterval) 16
+            else 60 / mMapData.mMapInfoData.mDateTimeInterval
+            for (i in -1..countMax) {
+                var addtime = i * mMapData.mMapInfoData.mDateTimeInterval
+                var timeStr = if (30 <= mMapData.mMapInfoData.mDateTimeInterval) (addtime / 60).toString() + "時間後"
+                else addtime.toString() + "分後"
+                timeString.add(timeStr)
+            }
+            klib.setMenuDialog(this, "予測時間", timeString, iTimeIncSelectOperation)
+        }
     }
+
+    //  時刻設定の地図データの予測時間設定
+    @RequiresApi(Build.VERSION_CODES.O)
+    var iTimeIncSelectOperation = Consumer<String> { s ->
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show()
+        var addtime = klib.str2Integer(s) * if (0 <= s.indexOf("時間")) 60 else 1
+        mMapData.mMapInfoData.mDateTimeInc = addtime / mMapData.mMapInfoData.mDateTimeInterval
+        mapInit()
+        mapDisp(mMapDataDownLoadMode)
+    }
+
 
     /**
      * 地図データのタイトルをSpnnerに設定
