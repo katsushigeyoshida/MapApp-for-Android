@@ -515,6 +515,18 @@ class KLib {
 
 
     /**
+     * 文字列を実数に変換(後についている数値以外の文字は無視する)
+     * 文字列が数値でない場合は0を返す
+     * strNumber.toDoubleOrNull()?:0.0でもおこなえる
+     * @param str   文字列
+     * @return      実数値
+     */
+    fun str2Double(str: String): Double {
+        var numStr = stripUnNumberChar(str)
+        return if (isFloat(numStr)) numStr.toDouble() else 0.0
+    }
+
+    /**
      * 文字列を整数に変換(後についている数値以外の文字は無視する
      * 先頭に0xがある場合は16進変換、文字列が数値でない場合は0を返す
      * @param str   文字列
@@ -553,6 +565,20 @@ class KLib {
             }
         }
         return buf
+    }
+
+    /**
+     * 文字列が数値かどうかの判定
+     * @param v     文字列
+     * @return      判定結果
+     */
+    fun isFloat(v: String): Boolean {
+        return try {
+            v.toDouble()
+            true
+        } catch (e: NumberFormatException) {
+            false
+        }
     }
 
     /**

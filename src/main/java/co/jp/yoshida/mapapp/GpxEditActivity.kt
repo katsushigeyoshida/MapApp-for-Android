@@ -32,12 +32,14 @@ class GpxEditActivity : AppCompatActivity() {
     lateinit var edComment: EditText
     lateinit var tvYear: TextView
     lateinit var tvGpxInfo: TextView
+    lateinit var tvDataInfo: TextView
     lateinit var btGruopRef: Button
     lateinit var btGpxPathRef: Button
     lateinit var btGraph: Button
     lateinit var btOK: Button
     lateinit var btCancel: Button
     lateinit var spColor: Spinner
+    lateinit var spThickness: Spinner
     lateinit var spCategory: Spinner
 
     var mGpxDataListPath = ""                           //  GPXファイルリストパス
@@ -103,12 +105,14 @@ class GpxEditActivity : AppCompatActivity() {
         edComment    = binding.editTextTextPersonName16
         tvGpxInfo    = binding.textView31
         tvYear       = binding.textView32
+        tvDataInfo   = binding.textView11
         btGruopRef   = binding.button7
         btGpxPathRef = binding.button8
         btGraph      = binding.button15
         btOK         = binding.button9
         btCancel     = binding.button10
         spColor      = binding.spinner2
+        spThickness  = binding.spinner13
         spCategory   = binding.spinner3
 
         edTitle.setText("")
@@ -127,10 +131,24 @@ class GpxEditActivity : AppCompatActivity() {
         )
         spColor.adapter = colorAdapter
 
+        //  線分の太さのSpinner
+        val thicknessMenu = (1..15).map { it.toString() }
+        var thicknessAdapter = ArrayAdapter(
+            this, android.R.layout.simple_spinner_dropdown_item, thicknessMenu
+        )
+        spThickness.adapter = thicknessAdapter
+
         //  分類のSpinner
         var categoryAdapter = ArrayAdapter(
             this, android.R.layout.simple_spinner_dropdown_item, mGpsTraceList.mCategoryMenu)
         spCategory.adapter = categoryAdapter
+
+        //  データ情報をロングタッチすることで距離の登録を変更
+        tvDataInfo.setOnLongClickListener {
+            var info = mGpsTraceList.mDataList[mGpxFilePos].mDistance.toString()
+            klib.setInputDialog(this, "距離変更", info, iDataInfo)
+            true
+        }
 
         //  グループ設定
         btGruopRef.setOnClickListener {
@@ -166,8 +184,11 @@ class GpxEditActivity : AppCompatActivity() {
                 gpsFileData.mGroup = edGroup.text.toString()
                 gpsFileData.mCategory = mGpsTraceList.mCategoryMenu[spCategory.selectedItemPosition]
                 gpsFileData.mLineColor = mGpsTraceList.mColorMenu[spColor.selectedItemPosition]
+                gpsFileData.mThickness= spThickness.selectedItem.toString().toFloat()
                 gpsFileData.mComment = edComment.text.toString()
                 if (0 <= mGpxFilePos) {
+                    if (0 < mGpsTraceList.mDataList[mGpxFilePos].mDistance)
+                        gpsFileData.mDistance = mGpsTraceList.mDataList[mGpxFilePos].mDistance
                     mGpsTraceList.mDataList[mGpxFilePos] = gpsFileData
                 } else {
                     mGpsTraceList.mDataList.add(gpsFileData)
@@ -184,6 +205,13 @@ class GpxEditActivity : AppCompatActivity() {
             setResult(RESULT_CANCELED)
             finish()
         }
+    }
+
+    //  距離のデータ変更
+    var iDataInfo = Consumer<String> { s ->
+        mGpsTraceList.mDataList[mGpxFilePos].mDistance = klib.str2Double(s)
+        setDataInfo()
+        //Log.d(TAG,"inputDialog: " + s)
     }
 
     //  グループ名をコントロールに設定する関数インターフェース
@@ -225,11 +253,30 @@ class GpxEditActivity : AppCompatActivity() {
             edGpxPath.setText(mGpsTraceList.mDataList[mGpxFilePos].mFilePath)
             edComment.setText(mGpsTraceList.mDataList[mGpxFilePos].mComment)
             spColor.setSelection(mGpsTraceList.mColorMenu.indexOf(mGpsTraceList.mDataList[mGpxFilePos].mLineColor))
+            var index = 4
+            for (i in 0 .. spThickness.adapter.count - 1) {
+                if (spThickness.adapter.getItem(i).toString().toInt() == mGpsTraceList.mDataList[mGpxFilePos].mThickness.toInt()) {
+                    index = i
+                    break
+                }
+            }
+            spThickness.setSelection(index)
             spCategory.setSelection(mGpsTraceList.mCategoryMenu.indexOf(mGpsTraceList.mDataList[mGpxFilePos].mCategory))
+            setDataInfo()
         } else {
             //  新規データ
             setGpxFileInfo(gpxFilePath, title)
         }
+    }
+
+    /**
+     * 開始時間根終了時間、距離の表示設定
+     */
+    fun setDataInfo() {
+        var info = "開始 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mFirstTime, "yyyy/MM/dd HH:mm:ss")
+        info += ", 終了 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mLastTime, "yyyy/MM/dd HH:mm:ss")
+        info += ", 距離 " + mGpsTraceList.mDataList[mGpxFilePos].mDistance.toString() + " km"
+        tvDataInfo.setText(info)
     }
 
     /**
@@ -248,6 +295,10 @@ class GpxEditActivity : AppCompatActivity() {
             gpsFileData.loadGpsData(false)
         tvGpxInfo.setText(gpsFileData.getInfoData())
         tvYear.setText(klib.date2String( gpsFileData.mFirstTime, "yyyy年"))
+        var info = klib.date2String(gpsFileData.mFirstTime, "yyyy/MM/dd HH:mm:ss")
+        info += ", " + klib.date2String(gpsFileData.mLastTime, "yyyy/MM/dd HH:mm:ss")
+        info += ", " + gpsFileData.mDistance.toString() + " km"
+        tvDataInfo.setText(info)
     }
 
     /**
