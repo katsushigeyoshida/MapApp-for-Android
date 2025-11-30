@@ -65,9 +65,9 @@ class GpsService : Service(), SensorEventListener {
     }
 
     //  GPS情報処理
-    private lateinit var mFusedLocationClient: FusedLocationProviderClient
-    private lateinit var mLocationRequest: LocationRequest
-    private lateinit var mOnUpdateLocation: GpsService.OnUpdateLocation //  GPSコールバックオブジェクト
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient  //  位置情報取得
+    private lateinit var mLocationRequest: LocationRequest  //  GPSの要求内容(要求時間、制度...)
+    private lateinit var mOnUpdateLocation: OnUpdateLocation //  GPSコールバックオブジェクト
     private lateinit var  mSensorManager: SensorManager
     private val mIntervalTime = 5000L               //  GPS取得インターバル(ms)
     private var mGpsFilePath = ""                   //  GPSデータ保存パス

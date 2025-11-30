@@ -368,7 +368,16 @@ class KLib {
         return 0.0
     }
 
-    //  ---  数値処理  ---
+    //  ====  数値処理  ====
+
+
+    /**
+     * 2つの角度(deg)の差分(距離) (0 ～ 180)
+     */
+    fun degDiff(deg1: Int, deg2: Int): Int {
+        val deg = deg1 - deg2
+        return if (180 < abs(deg)) 360 - deg else abs(deg)
+    }
 
     /**
      * 指定の上位桁数で丸める(切り捨て)

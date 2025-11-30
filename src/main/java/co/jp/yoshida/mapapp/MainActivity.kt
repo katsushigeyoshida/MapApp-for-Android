@@ -1,7 +1,12 @@
 package co.jp.yoshida.mapapp
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Color
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -32,6 +37,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.text.split
 
 //  GPS位置情報取得
@@ -41,7 +47,7 @@ import kotlin.text.split
 /**
  * 地図アプリ
  */
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
     val TAG = "MapApp.MainActivity"
 
     var mBaseFolder = ""                            //  地図画像ファイル保存フォルダ
@@ -162,6 +168,13 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private lateinit var sensorManager: SensorManager       //  センサマネージャー
+    private var accelerometer: Sensor? = null               //  加速度センサ
+    private var magneticField: Sensor? = null               //  磁気センサ
+    private var accelerometerReading = FloatArray(3)    //  加速度取得地
+    private var magnetometerReading = FloatArray(3)     //  時期センサ読み取り地
+
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -192,6 +205,10 @@ class MainActivity : AppCompatActivity() {
 
         //	位置情報の初期化
         initGps()
+        //  センサーマネジャー
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+        magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
     }
 
     /**
@@ -219,6 +236,14 @@ class MainActivity : AppCompatActivity() {
         //  GPSサービスが起動しているときは、GPSトレース表示のハンドラを開始
         if (klib.isServiceRunning(this, GpsService::class.java))
             handler.post(GpsTraceRunnable)
+        // 加速度センサー登録
+        accelerometer?.also {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
+        // 磁気センサー登録
+        magneticField?.also {
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
     }
 
     override fun onStop() {
@@ -238,6 +263,40 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+//        TODO("Not yet implemented")
+    }
+
+    /**
+     * センサー処理(加速度センサーと磁気センサーから方位を求める)
+     */
+    override fun onSensorChanged(event: SensorEvent?) {
+        when (event?.sensor?.type) {
+            Sensor.TYPE_ACCELEROMETER -> {
+                accelerometerReading = event.values.clone()
+            }
+            Sensor.TYPE_MAGNETIC_FIELD -> {
+                magnetometerReading = event.values.clone()
+            }
+            else -> return
+        }
+        //	回転行列の取得し方位(Z軸周り)、仰角(X軸周り)、ロール角(Y軸周り)を求める
+        var rotate = FloatArray(16)
+        var inclination = FloatArray(16)
+        var orientation = FloatArray(3)
+        val success = SensorManager.getRotationMatrix(rotate, inclination,
+            accelerometerReading, magnetometerReading)
+        if (success) {
+            SensorManager.getOrientation(rotate, orientation) // 方向を求める
+            val azimuthDeg = Math.toDegrees(orientation[0].toDouble())
+            val azimuth = ((azimuthDeg.toFloat() + 360) % 360).roundToInt()
+            if (10 < klib.degDiff(mMapView.mAzimuth, azimuth)) {
+                mMapView.mAzimuth = azimuth
+                mMapView.reDraw()
+            }
+        }
+//        TODO("Not yet implemented")
+    }
 
     //  タッチ位置の前回値
     var mPreTouchPosition = PointD(0.0, 0.0)
@@ -452,6 +511,8 @@ class MainActivity : AppCompatActivity() {
      */
     @RequiresApi(Build.VERSION_CODES.O)
     fun init() {
+        //  画面の剥きを固定
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         //  wデータフォルダの設定
         val baseFolder = klib.getDCIMDirectory()
         chkManageAllFilesAccess(baseFolder)     //  ファイルアクセスのパーミッションチェック

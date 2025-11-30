@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.Point
 import android.graphics.PointF
 import android.os.Build
 import android.util.Log
@@ -14,6 +13,9 @@ import android.view.View
 import androidx.annotation.RequiresApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 class MapView(context: Context, var mMapData: MapData): View(context) {
     val TAG = "MapView"
@@ -37,6 +39,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     var mCenterColor = ""                   //  中心の色(凡例で使用)
     var mComment = ""                       //  コメント表示(凡例データなどせ)
     var mMessage = ""                       //  非同期のメッセージ表示
+    var mAzimuth = 0                    //  方位(Deg)
     var mInfoTextSize = 32.0                //  画面左上の情報表示文字サイズ
     var mDispDateTime = mutableListOf<LocalDateTime>()
     @RequiresApi(Build.VERSION_CODES.O)
@@ -68,11 +71,13 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         //  GPSトレースリスト表示
         mGpsTraceList.draw(canvas, mMapData)
         //  中心線
-        drawCross(canvas)
+        drawCross()
         //  座標と標高、凡例の表示
         drawCoordinates(canvas, mMapData)
         //  縮尺表示
         drawScaler()
+        //  方位の表示
+        drawOrientation(mAzimuth)
     }
 
     //  再表示
@@ -136,14 +141,36 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         }
     }
 
+    /**
+     * 方位の表示
+     */
+    fun drawOrientation(orientation: Int) {
+        //  方位の表示円
+        kdraw.setProperty("Blue", 4.0, Paint.Style.STROKE )
+        val r = mWidth / 20.0
+        var ctr = PointD(r + 10.0, mHeight - r - 10.0)
+        kdraw.drawCircle(ctr, r)
+        //  方位矢印の作成
+        var path = mutableListOf<PointD>()
+        var angle = (-orientation - 90).toDouble()
+        var p = ctr.plus(PointD(r * cos(angle / 180 * PI), r * sin(angle / 180 * PI)))
+        path.add(p)
+        p = ctr.plus(PointD(r * cos((angle + 150) / 180 * PI), r * sin((angle + 150) / 180 * PI)))
+        path.add(p)
+        p = ctr.plus(PointD(r * cos((angle - 150) / 180 * PI), r * sin((angle - 150) / 180 * PI)))
+        path.add(p)
+        p = ctr.plus(PointD(r * cos(angle / 180 * PI), r * sin(angle / 180 * PI)))
+        path.add(p)
+        kdraw.setProperty("Blue", 4.0, Paint.Style.FILL )
+        kdraw.drawPath(path)
+    }
+
     //  中心線表示
-    fun drawCross(canvas: Canvas) {
-        var paint = Paint()
-        paint.color = Color.BLUE
-        paint.strokeWidth = 4f
-        var ctr = Point(mWidth / 2, mHeight / 2)
-        canvas.drawLine((ctr.x - 50).toFloat(), ctr.y.toFloat(), (ctr.x + 50).toFloat(), ctr.y.toFloat(), paint)
-        canvas.drawLine(ctr.x.toFloat(), (ctr.y - 50).toFloat(), ctr.x.toFloat(), (ctr.y + 50).toFloat(), paint)
+    fun drawCross() {
+        kdraw.setProperty("Blue", 4.0, )
+        var ctr = PointD(mWidth / 2.0, mHeight / 2.0)
+        kdraw.drawLine(PointD(ctr.x - 50.0, ctr.y), PointD(ctr.x + 50.0, ctr.y))
+        kdraw.drawLine(PointD(ctr.x, ctr.y - 50.0), PointD(ctr.x, ctr.y + 50.0))
     }
 
     //  縮尺表示

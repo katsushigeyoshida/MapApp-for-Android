@@ -201,4 +201,11 @@ class PointD {
         x = cp.x + (x - cp.x) * scale
         y = cp.y + (y - cp.y) * scale
     }
+
+    /**
+     * 加算した値を返す
+     */
+    fun plus(p: PointD): PointD {
+        return PointD(x + p.x, y + p.y)
+    }
 }
