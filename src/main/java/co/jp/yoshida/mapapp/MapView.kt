@@ -6,11 +6,9 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PointF
-import android.os.Build
 import android.util.Log
 import android.util.SizeF
 import android.view.View
-import androidx.annotation.RequiresApi
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.PI
@@ -39,10 +37,10 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     var mCenterColor = ""                   //  中心の色(凡例で使用)
     var mComment = ""                       //  コメント表示(凡例データなどせ)
     var mMessage = ""                       //  非同期のメッセージ表示
-    var mAzimuth = 0                    //  方位(Deg)
+    var mAzimuth = 0                        //  方位(Deg)
+    var mOrientation = true                 //  方位センサーの有無
     var mInfoTextSize = 32.0                //  画面左上の情報表示文字サイズ
     var mDispDateTime = mutableListOf<LocalDateTime>()
-    @RequiresApi(Build.VERSION_CODES.O)
     var mDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
 
     var klib = KLib()
@@ -54,7 +52,6 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     }
 
     //  描画処理
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onDraw(canvas: Canvas) {
 //        super.onDraw(canvas)
         //  セルの表示
@@ -77,7 +74,8 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         //  縮尺表示
         drawScaler()
         //  方位の表示
-        drawOrientation(mAzimuth)
+        if (mOrientation)
+            drawOrientation(mAzimuth)
     }
 
     //  再表示
@@ -86,7 +84,6 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     }
 
     //  座標表示と標高、GPSトレースデータ、地質図凡例表示
-    @RequiresApi(Build.VERSION_CODES.O)
     fun drawCoordinates(canvas: Canvas, mapData: MapData) {
         //  表示位置
         var x = 10f
@@ -143,6 +140,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
 
     /**
      * 方位の表示
+     * orientation : 北の向き(degree)
      */
     fun drawOrientation(orientation: Int) {
         //  方位の表示円
@@ -150,7 +148,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         val r = mWidth / 20.0
         var ctr = PointD(r + 10.0, mHeight - r - 10.0)
         kdraw.drawCircle(ctr, r)
-        //  方位矢印の作成
+        //  方位矢印(三角形)の作成
         var path = mutableListOf<PointD>()
         var angle = (-orientation - 90).toDouble()
         var p = ctr.plus(PointD(r * cos(angle / 180 * PI), r * sin(angle / 180 * PI)))

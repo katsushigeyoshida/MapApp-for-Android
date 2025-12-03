@@ -121,7 +121,12 @@ Filesアプリでダウンロードしたファイル(mapapp-debug.apk)をタッ
 
 
 ### 開発環境  
-Android Studio Narwhal 3 Feature Drop | 2025.1.3  
-Build #AI-251.26094.121.2513.14007798, built on August 28, 2025  
-Windows 11.0  
-Java  
+Android Studio Otter | 2025.2.1 Patch 1
+Windows 11.0 Memory: 2048M Cores: 12
+Kotlin
+Target SDK Version 36 (API 36 Baklava Androis 16)  
+Min SDK Version 27 (API 27 Oreo Android 8.1)   
+Compile SDK Version 6 (API 36 Baklava Androis 16)  
+Kotlin JVM Targe 11 (Java11)  
+
+

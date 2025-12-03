@@ -16,7 +16,6 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -80,7 +79,6 @@ class GpsService : Service(), SensorEventListener {
 
     val klib = KLib()
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate() {
 //        super.onCreate()
         //  通知設定(HIGH:sound,heads-up,vib DEFAULT:,vib LOW:no sound,no vib MIN:no sound,no icon, no vib)
@@ -179,7 +177,6 @@ class GpsService : Service(), SensorEventListener {
      * 位置所法の取得
      */
     private inner class OnUpdateLocation: LocationCallback() {
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun onLocationResult(locationResult: LocationResult) {
 //            super.onLocationResult
             if (mGpsCount == 1) klib.beep(50 * 3)
@@ -228,7 +225,6 @@ class GpsService : Service(), SensorEventListener {
      * importance   通知の重要度(IMPORTANCE_NON/MIN/LOW/DEFAULT/HIGH)
      * channelId    チャンネル名
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun notificationSet(name: String, importance:Int, channelId: String) {
         val channel = NotificationChannel(channelId, name, importance)  //  通知チャンネル
         val manager = getSystemService(NotificationManager::class.java) //  NotificationManagerの取得

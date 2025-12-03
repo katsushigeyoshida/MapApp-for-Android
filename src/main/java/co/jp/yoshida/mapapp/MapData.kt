@@ -1,10 +1,8 @@
 package co.jp.yoshida.mapapp
 
 import android.content.Context
-import android.os.Build
 import android.util.Log
 import android.util.Size
-import androidx.annotation.RequiresApi
 import java.time.LocalDateTime
 
 /**
@@ -60,7 +58,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     var mDataFolder = ""                                //  App直下のデータフォルダ
     val mImageFileSet = mutableSetOf<String>()          //  ダウンロードしたファイルリスト(Web上に存在しないファイルも登録)
     var mDateTimeFolder = ""                            //  日時フォルダ名
-    @RequiresApi(Build.VERSION_CODES.O)
     var mDispMapPreDateTime = LocalDateTime.now()       //
     val mImageFileSetName = "ImageFileSet.csv"          //  ダウンロードしたファイルリストのファイル名
     var mImageFileSetPath = ""                          //  ダウンロードしたファイルリストfパス
@@ -159,7 +156,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      * 日時付Webアドレスの処理
      * forth        強制過去データ削除
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun setDateTime(forth: Boolean = false) {
         mDateTimeFolder = ""
         mMapInfoData.mDispDateTime.clear()
@@ -280,7 +276,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      * fileUpdate   データ取得モード
      * return       ダウンロードパス
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getMapData(x: Int, y: Int, fileUdate: MainActivity.WebFileDownLoad): String {
         if (isMergeData()) {
             //  重ね合わせデータの表示する場合
@@ -306,7 +301,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      * fileUpdate   データ取得モード
      * return       重ね合わせ画像パス
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getMergeMapData(x: Int, y: Int, fileUdate: MainActivity.WebFileDownLoad): String {
         val mergeDataPath = downloadMergeDataPath(x, y)
         if (klib.existsFile(mergeDataPath) && fileUdate == MainActivity.WebFileDownLoad.OFFLINE)
@@ -336,7 +330,6 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      * fileUpdate   データ取得モード
      * return       ダウンロードパス
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getMapDataDownload(x: Int, y: Int, fileUdate: MainActivity.WebFileDownLoad): String {
         var mapUrl = mMapInfoData.getMapWebAddress(mZoom, x, y, mMapTitleNum)
         var downLoadPath = downloadPath(x, y)

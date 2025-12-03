@@ -6,10 +6,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.location.Location
 import android.location.LocationManager
-import android.os.Build
 import android.util.Log
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Job
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -57,7 +55,6 @@ class GpsTrace {
      * GPSトレース開始
      * count        継続保存(前回の値に追加)
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun start(cont: Boolean = false) {
         Log.d(TAG,"start:" + mGpsData.size )
         if (!cont) {
@@ -127,7 +124,6 @@ class GpsTrace {
     /**
      * GPS記録ファイルに日時ファイル名を付けて指定フォルダに移動
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun moveGpsFile(moveFolder: String, orgPath: String = mGpsPath) {
         if (klib.existsFile(orgPath)) {
             val traceStarTime = klib.getStrPreferences("GpsTraceStartTime", mC)

@@ -1,8 +1,6 @@
 package co.jp.yoshida.mapapp
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -548,7 +546,6 @@ class MapInfoData {
     var mMapTitleNum = 0
     var mElevatorDataNo = 0
     var mMapUrl = ""
-    @RequiresApi(Build.VERSION_CODES.O)
     var mPreDateTime = LocalDateTime.now()
 
     val klib = KLib()
@@ -564,7 +561,6 @@ class MapInfoData {
      * mapUrl       日時置換えURL
      * return       日時データ置き換えURL
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun replaceDateTime(mapUrl: String): String {
         var transData = mutableListOf<List<String>>()
         var dateJpn = LocalDateTime.now(ZoneId.of("Asia/Tokyo"))
@@ -594,7 +590,6 @@ class MapInfoData {
      *  dateUtc     世界時間
      *  return      日時データ文字列
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun transDate(form: List<String>, dateJpn: LocalDateTime, dateUtc: LocalDateTime): String {
         var dateTime = LocalDateTime.now()
         if (form.size == 1) {
@@ -712,7 +707,6 @@ class MapInfoData {
      * mapUrl       Webアドレス
      * return       日時変換したWebアドレス
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun setMapWebAddress(mapUrl: String = ""): String {
         var webUrl = mapUrl
         if (webUrl.length <= 1)
@@ -732,7 +726,6 @@ class MapInfoData {
      * mapTitleNum  地図データのNo
      * return       Webアドレス
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getMapWebAddress(zoom:Int, x: Int, y: Int, mapTitleNum: Int = -1): String {
         var webUrl = ""
         if (0 <= mapTitleNum) {

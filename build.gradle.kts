@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId = "co.jp.yoshida.mapapp"
-        minSdk = 24
+        minSdk = 27
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"

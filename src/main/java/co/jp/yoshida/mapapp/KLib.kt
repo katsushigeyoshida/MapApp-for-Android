@@ -1,6 +1,5 @@
 package co.jp.yoshida.mapapp
 
-//import java.util.function.Consumer
 import android.Manifest
 import android.app.ActivityManager
 import android.content.ClipData
@@ -20,14 +19,12 @@ import android.media.AudioManager
 import android.media.ExifInterface
 import android.media.ToneGenerator
 import android.net.Uri
-import android.os.Build
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.EditText
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.getExternalFilesDirs
@@ -821,7 +818,6 @@ class KLib {
     /**
      * 現在の年を取得
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun getNowDate(form:String = "YYYYMMdd_HHmmss"): String {
         val ldt = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern(form)
@@ -1043,7 +1039,6 @@ class KLib {
      * min          丸める分
      * return       真似メタ日時
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun roundDateTimeMin(et: LocalDateTime, min: Long): LocalDateTime {
         val st = LocalDateTime.of(2000, 1, 1, 0, 0, 0)
         val dt = ChronoUnit.MINUTES.between(st, et)

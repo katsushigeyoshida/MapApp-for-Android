@@ -8,7 +8,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -26,7 +25,6 @@ import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -75,22 +73,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     val MENU11 = 11
     val MENU12 = 12
 
-    val REQUESTCODE_WIKI = 1
-    val REQUESTCODE_MAPINFDATA = 2
-    val REQUESTCODE_GPXEDIT = 3
-    val REQUESTCODE_GPXFILELIST = 4
-    val REQUESTCODE_GPSTRACELIST = 5
-    val REQUESTCODE_MARKLIST = 6
-    val REQUESTCODE_MARKEDIT = 7
-    val REQUESTCODE_PHOTOGALLERY = 8
-
     //  オプションサブメニュー(画面登録)
     val mMapDispMenu = listOf(
         "登録画面呼び出し", "地図画面登録", "登録画面削除"
     )
     //  オプションサブメニュー(マーク操作)
     val mMarkMenu = listOf(
-        "中心位置を登録", "編集", "表示切替", "グループ表示切替", "ソート設定",
+        "中心位置をマーク登録", "マーク位置へ移動", "マークの編集", "マークの削除", "マーク表示切替", "グループ表示切替", "ソート設定",
         "リストのインポート", "リストのエキスポート", "マークサイズ"
     )
 
@@ -136,6 +125,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var mAppTitle = ""
     var klib = KLib()
 
+    //  ViewBinding を使える世にするには gradle　に設定追加し「sync now」を実施
     lateinit var binding: ActivityMainBinding
     lateinit var constraintLayout: ConstraintLayout
     lateinit var linearLayoutMap: LinearLayout
@@ -156,7 +146,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     //  GPS取得のタイマースレッド
     val GpsTraceRunnable = object : Runnable {
-        @RequiresApi(Build.VERSION_CODES.O)
         override fun run() {
             mGpsTrace.loadGpsPointData()
             var bp = klib.coordinates2BaseMap(mGpsTrace.lastPosition())
@@ -171,11 +160,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var sensorManager: SensorManager       //  センサマネージャー
     private var accelerometer: Sensor? = null               //  加速度センサ
     private var magneticField: Sensor? = null               //  磁気センサ
-    private var accelerometerReading = FloatArray(3)    //  加速度取得地
-    private var magnetometerReading = FloatArray(3)     //  時期センサ読み取り地
+    private var accelerometerReading = FloatArray(3)    //  加速度取得値
+    private var magnetometerReading = FloatArray(3)     //  磁気センサ読み取り値
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 //        enableEdgeToEdge()
@@ -209,6 +197,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
         magneticField = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)
+        if (accelerometer == null || magneticField == null)
+            mMapView.mOrientation = false
+
     }
 
     /**
@@ -309,7 +300,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var endTime:Long = 0
 
 
-    @RequiresApi(Build.VERSION_CODES.O)
+    /**
+     * タッチ操作 画面の移動、拡大縮小(マルチタッチ)
+     */
     override fun  onTouchEvent(event: MotionEvent): Boolean {
         var pos = PointD(event.x.toDouble(), (event.y - mMapViewTop).toDouble())
         var pointCount = event.pointerCount
@@ -339,6 +332,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 //                        if (mMeasure.mMeasureMode) {
 //                            mMeasure.decriment()
 //                        }
+                        //  長押しコンテキストメニュー
                         klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
                         startTime = 0
                         endTime = 0
@@ -457,7 +451,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  オプションメニューの実行
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             MENU00 -> {     //  地図情報の表示
@@ -509,9 +502,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * データフォルダパスの設定、地図データリストの読込,MapViewサイズ仮設定
      * spinner,buttonの処理
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun init() {
-        //  画面の剥きを固定
+        //  画面の向きを固定
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         //  wデータフォルダの設定
         val baseFolder = klib.getDCIMDirectory()
@@ -547,7 +539,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         //  地図タイトルのspinner設定
         spSetMapInfoData()
         spMapType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            @RequiresApi(Build.VERSION_CODES.O)
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mMapTitleNum != position) {
                     mMapData.mMapTitleNum = position
@@ -566,7 +557,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             mMapData.mZoomName)
         spZoomLevel.adapter = zoomLevelAdapter
         spZoomLevel.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            @RequiresApi(Build.VERSION_CODES.O)
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mZoom != position) {
                     mMapData.cellZoomReset()
@@ -586,7 +576,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             mMapData.mColCountName)
         spColCount.adapter = colCountAdapter
         spColCount.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            @RequiresApi(Build.VERSION_CODES.O)
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mMapData.mColCount != position + 1) {
                     mMapData.setColCountUpPos(mMapData.mColCount, position + 1)
@@ -682,7 +671,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     //  時刻設定の地図データの予測時間設定
-    @RequiresApi(Build.VERSION_CODES.O)
     var iTimeIncSelectOperation = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         var addtime = klib.str2Integer(s) * if (0 <= s.indexOf("時間")) 60 else 1
@@ -710,7 +698,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * GPSの状態をボタンに設定する
      * cont         継続フラグ (true:継続　false:新規設定 null:ダイヤログ確認)
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun setGpsButton(cont: Boolean? = null) {
         if (cont == null) {
             //  ダイヤログ確認あり
@@ -783,7 +770,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  長押しのコンテキストメニュー処理
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iLongTouchMenu = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         val n = mLongTouchMenu.indexOf(s)
@@ -834,14 +820,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * 画面登録メニュー
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun areaDataOptionMenu() {
         klib.setMenuDialog(this,
             "画面登録メニュー", mMapDispMenu, iAreaMapOperation)
     }
 
     //  登録画面処理
-    @RequiresApi(Build.VERSION_CODES.O)
     var iAreaMapOperation = Consumer<String> { s ->
         if (s.compareTo(mMapDispMenu[0]) == 0) {
             //  登録画面読出し
@@ -871,7 +855,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  画面位置の選択表示
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iPostionSelectOperation = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         val parameter = mAreaData.mAreaDataList[s]
@@ -971,7 +954,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      *  指定位置近傍のマークデータ削除
      *  sp      マウス位置(スクリーン座標)
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun removeMark(sp: PointD) {
         mSelectMark = mMarkList.getMarkNum(sp, mMapData)
         if (0 <= mSelectMark) {
@@ -984,7 +966,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * マーク操作のメニュー表示
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun markOperationMenu() {
         klib.setMenuDialog(this, "マーク操作", mMarkMenu, iMarkOperation)
     }
@@ -992,33 +973,38 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  マーク操作のメニュー選択実行
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iMarkOperation = Consumer<String> { s ->
         if (s.compareTo(mMarkMenu[0]) ==0) {
             //  中心位置をマーク登録
             var bp = mMapData.screen2BaseMap(mMapView.getCenter())  //  中心座標
             newMark(bp)
         } else if (s.compareTo(mMarkMenu[1]) == 0) {
+            //  位置への移動
+            gotoMark()
+        } else if (s.compareTo(mMarkMenu[2]) == 0) {
             //  編集
             selectEditMark()
-        } else if (s.compareTo(mMarkMenu[2]) == 0) {
+        } else if (s.compareTo(mMarkMenu[3]) == 0) {
+            //  削除
+            removeMark()
+        } else if (s.compareTo(mMarkMenu[4]) == 0) {
             //  マーク表示切替
             mMarkList.mMarkDisp = !mMarkList.mMarkDisp
             setMarkButton()
             mapDisp(mMapDataDownLoadMode)
-        } else if (s.compareTo(mMarkMenu[3]) == 0) {
+        } else if (s.compareTo(mMarkMenu[5]) == 0) {
             //  グループ表示切替
             markGroupDisp()
-        } else if (s.compareTo(mMarkMenu[4]) == 0) {
+        } else if (s.compareTo(mMarkMenu[6]) == 0) {
             //  マークリストのソート設定
             markSort()
-        } else if (s.compareTo(mMarkMenu[5]) == 0) {
+        } else if (s.compareTo(mMarkMenu[7]) == 0) {
             //  マークリストのインポート
             markImport()
-        } else if (s.compareTo(mMarkMenu[6]) == 0) {
+        } else if (s.compareTo(mMarkMenu[8]) == 0) {
             //  マークリストのエクスポート
             markExport()
-        } else if (s.compareTo(mMarkMenu[7]) == 0) {
+        } else if (s.compareTo(mMarkMenu[9]) == 0) {
             //  マークサイズ
             markSize()
         }
@@ -1056,9 +1042,39 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     /**
+     * マークリストのデータ削除
+     */
+    fun removeMark() {
+        klib.setMenuDialog(this, "マークの削除",
+            mMarkList.getGroupList("すべて"), iMarkGroupSelecteRemoveOperation)
+
+    }
+
+    //  マークリストのグループ選択・削除
+    var iMarkGroupSelecteRemoveOperation = Consumer<String> { s ->
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show()
+        if (0 < s.length) {
+            val group = if (s.compareTo("すべて")==0) "" else s
+            mMarkList.mCenter = klib.baseMap2Coordinates(mMapData.getCenter())
+            klib.setMenuDialog(this, "マークの編集", mMarkList.getTitleList(group),
+                iMarkTitleSelectRemoveOperation)
+        }
+    }
+
+    //  選択したマークの削除
+    var iMarkTitleSelectRemoveOperation = Consumer<String> { s ->
+        Toast.makeText(this, s, Toast.LENGTH_LONG).show()
+        mSelectMark = mMarkList.getMarkNum(s, mMarkList.mPreSelectGroup)
+        if (0 <= mSelectMark) {
+            mMarkList.mMarkList.removeAt(mSelectMark)
+            mMarkList.setGroupDispList()
+            mapDisp(mMapDataDownLoadMode)
+        }
+    }
+
+    /**
      * マークをグループ単位で表示/非表示を設定
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun markGroupDisp() {
         var groupList = mMarkList.getMarkGroupArray()
         var chkList = mMarkList.getMarkGroupBooleanArray()
@@ -1069,7 +1085,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * マークをグループ単位で表示/非表示を設定の関数インターフェース
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iMarkGroupDispOperation = Consumer<BooleanArray> { s ->
         var groupList = mMarkList.getMarkGroupArray()
         for (i in 0..s.size - 1) {
@@ -1099,7 +1114,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * マークシンボルのサイズを設定
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun markSize() {
         klib.setMenuDialog(this, "マークの大きさ(" + "%.1f".format(mMarkList.mMarkScale) + ")",
             mMarkSizeMenu, iMarkSizeOperation)
@@ -1108,7 +1122,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * マークシンボルのサイズを設定
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iMarkSizeOperation = Consumer<String> { s ->
         mMarkList.mMarkScale = s.toFloat()
         mapDisp(mMapDataDownLoadMode)
@@ -1160,7 +1173,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  マークリスト選択による画面移動1
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun gotoMark() {
         klib.setMenuDialog(this, "マーク位置に移動",
             mMarkList.getGroupList("すべて"), iMarkGroupSelectOperation)
@@ -1169,7 +1181,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  マークリスト選択による画面移動2 グループリストの選択でタイトルの選択実行
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iMarkGroupSelectOperation = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         if (0 < s.length) {
@@ -1184,7 +1195,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  マークリスト選択による画面移動3 タイトル選択で画面の移動
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     var iMarkTitleSelectOperation = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         val mark = mMarkList.getMark(s, mMarkList.mPreSelectGroup)
@@ -1211,7 +1221,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * 地図表示前の設定(初期化/切替)
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun mapInit() {
         mMapData.saveImageFileSet()
         mMapData.normarized()
@@ -1229,7 +1238,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      *  地図を表示する
      *  fileUpdate      Webファイルの更新方法
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun mapDisp(fileUpdate: WebFileDownLoad) {
         //  地図イメージの表示
         mapDataSet(fileUpdate)
@@ -1241,7 +1249,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      *  地図データの取り込み
      *  fileUpdate      Webファイルの更新方法
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun mapDataSet(fileUpdate: WebFileDownLoad) {
         if (mMapData.mView.width <= 0 || mMapData.mView.height <= 0 || mMapData.mColCount <= 0)
             return
@@ -1304,7 +1311,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      *                                    UPDATE: 常にダウンロード
      *                                    OFFLINE: ファイルの有無にかかわらずダウンロードなし
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun webFileLoad(mapData: MapData, fileUpdate: WebFileDownLoad) {
         mElevatorDataNo = mapData.mElevatorDataNo
         val maxDataCount = mapData.getMaxColCount()
@@ -1482,7 +1488,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      *  位置情報(GPS除法)の初期化
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun initGps() {
         mGpsTraceFileFolder = mDataFolder + mGpsTraceFileFolder
         if (!klib.mkdir(mGpsTraceFileFolder))
@@ -1542,7 +1547,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * GPS Srviceの終了
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun GpsServiceEnd(save: Boolean = true) {
         val intent = Intent(this, GpsService::class.java)
         stopService(intent)
@@ -1654,8 +1658,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * ファイルアクセスのパーミッション設定を開く
      */
     fun goFileAccessPermision() {
-        val intent = Intent("android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION")
-        startActivity(intent)
+        try {
+            val intent = Intent("android.settings.MANAGE_ALL_FILES_ACCESS_PERMISSION")
+            startActivity(intent)
+        } catch (e: Exception) {
+            klib.messageDialog(this, "ファイル",
+                "ストレージのアクセス権限は[設定]-[アプリと通知]-[アプリ名]-[権限]で\n"+
+                        "設定を行うことができます");
+        }
     }
 
     /**
@@ -1670,7 +1680,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * GPSトレースリストの起動
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun goGpsTraceList() {
         val intent = Intent(this, GpsTraceListActivity::class.java)
         intent.putExtra("GPSTRACEFOLDER", mGpsTraceFileFolder)
@@ -1681,7 +1690,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * GPSトレースリストからの指定処理(座標移動))
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     private val gpsTraceListActivityLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
@@ -1724,7 +1732,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * フォトギャラリーを起動してイメージファイルを選択する
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     fun goPhotoGallery() {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
             addCategory(Intent.CATEGORY_OPENABLE)
@@ -1736,7 +1743,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     /**
      * フォトギャラリーの起動
      */
-    @RequiresApi(Build.VERSION_CODES.O)
     private val photoGalleryLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
