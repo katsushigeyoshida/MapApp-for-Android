@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         ALLUPDATE,                      //  地図ファイルなしでダウンロード(登録データの有無に関係なく)
         OFFLINE                         //  地図ファイルの有無にかかわらずダウンロードなし
     }
-    var mMapDataDownLoadMode = WebFileDownLoad.NORMAL
+    var mMapDataDownLoadMode = WebFileDownLoad.NORMAL   //  WebFileのダウンロードモード初期値
 
     var mGpsLocation = false                        //  GPSに追従して地図を動かす
     var mGpsEnable = false                          //  GPS使用可否

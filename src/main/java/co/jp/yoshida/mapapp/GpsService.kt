@@ -28,7 +28,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
-//  GPSにgoogle play service()FusedLocationProviderClient)を使用
+//  GPSにgoogle play service(FusedLocationProviderClient)を使用
 //  google play service インストール
 //      File　→　Setting → Apperrance & Behavior
 //      → System Settings → Android SDK　→ SDK Tools → google play sevice)
