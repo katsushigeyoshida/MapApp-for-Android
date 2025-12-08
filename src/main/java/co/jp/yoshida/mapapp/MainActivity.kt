@@ -86,7 +86,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     //  長押し時のコンテキストメニュー項目
     var mLongTouchMenu = mutableListOf<String>(
         "マーク位置へ移動", "マーク登録", "マーク編集", "マーク参照", "マーク削除",
-//        "Wikiリスト検索", "距離測定開始"
+//        "Wikiリスト検索",
+        "距離測定開始"
     )
 
     val mMarkSizeMenu = listOf(
@@ -112,7 +113,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var mMapData = MapData(this, mMapInfoData)      //  地図のパラメータクラス
     var mAreaData = AreaData()                      //  画面登録クラス
     var mMarkList = MarkList()                      //  マークリストクラス
-//    var mMeasure = Measure()                        //  距離測定クラス
+    var mMeasure = Measure()                        //  距離測定クラス
     //    var mGpxDataList = GpsDataList()                //  GPXデータリスト
     var mGpsTraceList = GpsTraceList()              //  GPSトレースリスト
     var mGpsTrace = GpsTrace()                      //  GpsのLogをとる
@@ -176,7 +177,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         //  地図データの初期化
         mMapView = MapView(this, mMapData)
         mMapView.mMarkList = mMarkList          //  マークリストデータの設定
-//        mMapView.mMeasure = mMeasure            //  距離測定データの設定
+        mMapView.mMeasure = mMeasure            //  距離測定データの設定
         mMapView.mGpsTraceList = mGpsTraceList  //  GPSトレースの表示設定
         mMapData.mDataFolder = mDataFolder      //  データファイルフォルダ設定
         mMapData.loadParameter()                //  パラメータの読み込み
@@ -340,8 +341,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
             MotionEvent.ACTION_MOVE -> {    //  (2)
+                //  距離測定
+                if (mMeasure.mMeasureMode) {
+                    if (1 < mMeasure.mPositionList.size)
+                        mMeasure.decriment()
+                    mMeasure.add(mMapData.screen2BaseMap(mMapView.getCenter())) //  中心座標追加
+                    Log.d(TAG,"Measure move "+mMeasure.mPositionList.size)
+                }
                 if (mZoomOn && 1 < pointCount) {
-                    Log.d(TAG, "ACTION_MOVE zoom "+mZoomOn+" "+mMoveOn)
                     //  マルチタッチによる拡大縮小
                     var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
                     var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
@@ -773,46 +780,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var iLongTouchMenu = Consumer<String> { s ->
         Toast.makeText(this, s, Toast.LENGTH_LONG).show()
         val n = mLongTouchMenu.indexOf(s)
-        when (n) {
-            0 -> {                      //  マーク位置への移動
-                gotoMark()
-            }
-            1 -> {                      //  指定値のマークの登録
-                mSelectMark = -1        //  新規データ
-                var bp = mMapData.screen2BaseMap(mPreTouchPosition)
-                newMark(bp)
-            }
-            2 -> {                      //  指定位置近傍のマークの編集
-                editMark(mPreTouchPosition)
-            }
-            3 -> {                      //  指定位置近傍のマークの林間参照
-                referenceMark(mPreTouchPosition)
-            }
-            4 -> {                      //  指定位置近傍のマークの削除
-                removeMark(mPreTouchPosition)
-            }
-            5 -> {                      //  WikiList登録
+        if (mLongTouchMenu[n].compareTo("マーク位置へ移動") == 0) {
+            gotoMark()
+        } else if (mLongTouchMenu[n].compareTo("マーク登録") == 0) {
+            mSelectMark = -1        //  新規データ
+            var bp = mMapData.screen2BaseMap(mPreTouchPosition)
+            newMark(bp)
+        } else if (mLongTouchMenu[n].compareTo("マーク編集") == 0) {
+            editMark(mPreTouchPosition)
+        } else if (mLongTouchMenu[n].compareTo("マーク参照") == 0) {
+            referenceMark(mPreTouchPosition)
+        } else if (mLongTouchMenu[n].compareTo("マーク削除") == 0) {
+            removeMark(mPreTouchPosition)
+        } else if (mLongTouchMenu[n].compareTo("距離測定開始") == 0) {
+            mLongTouchMenu[n] = "距離測定終了"
+            mLongTouchMenu.add("測定点を一つ戻す")
+            mLongTouchMenu.add("測定位置指定")
+            mMeasure.start()
+            mMeasure.add(mMapData.screen2BaseMap(mMapView.getCenter())) //  中心座標追加
+        } else if (mLongTouchMenu[n].compareTo("距離測定終了") == 0) {
+            mLongTouchMenu[n] = "距離測定開始"
+            mLongTouchMenu.removeAt(n + 1)
+            mLongTouchMenu.removeAt(n + 1)
+            var dis = mMeasure.measure(mMapData)
+            klib.messageDialog(this, "測定距離", "%.3f km".format(dis))
+            mMeasure.end()
+        } else if (mLongTouchMenu[n].compareTo("測定点を一つ戻す") == 0) {
+            mMeasure.decriment()
+            mapDisp(mMapDataDownLoadMode)
+        } else if (mLongTouchMenu[n].compareTo("測定位置指定") == 0) {
+            //  距離測定
+            if (mMeasure.mMeasureMode)
+                mMeasure.add(mMapData.screen2BaseMap(mMapView.getCenter())) //  中心座標追加
+        } else if (mLongTouchMenu[n].compareTo("WikiList登録") == 0) {
 //                var coord = mMapData.baseMap2Coordinates(mMapData.getCenter())
 //                var coordString =
 //                    "北緯" + "%.8f".format(coord.y) + "度東経" + "%.8f".format(coord.x) + "度 20km以内"
 //                goWikiList(coordString)
-            }
-            6 -> {                      //  距離測定の開始・終了
-                if (mLongTouchMenu[n].compareTo("距離測定開始") == 0) {
-//                    mLongTouchMenu[n] = "距離測定終了"
-//                    mLongTouchMenu.add("測定点を一つ戻す")
-//                    mMeasure.start()
-                } else if (mLongTouchMenu[n].compareTo("距離測定終了") == 0) {
-//                    mLongTouchMenu[n] = "距離測定開始"
-//                    mLongTouchMenu.removeAt(n + 1)
-//                    var dis = mMeasure.measure(mMapData)
-//                    klib.messageDialog(this, "測定距離", "%.3f km".format(dis))
-                }
-            }
-            7 -> {                      //  距離測定で「一つ戻る」
-//                mMeasure.decriment()
-//                mapDisp(mMapDataDownLoadMode)
-            }
         }
     }
 

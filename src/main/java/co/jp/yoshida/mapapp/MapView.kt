@@ -28,7 +28,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     var mOffset = PointD(0.0, 0.0)
 
     var mMarkList = MarkList()              //  マークのデータ
-//    var mMeasure = Measure()                //  距離測定実行中のデータ
+    var mMeasure = Measure()                //  距離測定実行中のデータ
     var mGpsTrace = GpsTrace()              //  GPSトレース実行中のデータ
     var mGpsTraceList = GpsTraceList()      //  GPSトレースデータ
     //    var mGpsDataList = GpsDataList()        //  GPSデータ
@@ -54,15 +54,15 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     //  描画処理
     override fun onDraw(canvas: Canvas) {
 //        super.onDraw(canvas)
+        kdraw.mCanvas = canvas
         //  セルの表示
         for (cell in mGCells) {
             cell.draw(canvas)
         }
-
         //  マークのの表示
         mMarkList.draw(canvas, mMapData)
         //  測定線の表示
-//        mMeasure.draw(canvas, mMapData)
+        mMeasure.draw(canvas, mMapData)
         //  GPSトレースの表示
         mGpsTrace.draw(canvas, mMapData)
         //  GPSトレースリスト表示
@@ -70,7 +70,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         //  中心線
         drawCross()
         //  座標と標高、凡例の表示
-        drawCoordinates(canvas, mMapData)
+        drawCoordinates(mMapData)
         //  縮尺表示
         drawScaler()
         //  方位の表示
@@ -84,7 +84,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     }
 
     //  座標表示と標高、GPSトレースデータ、地質図凡例表示
-    fun drawCoordinates(canvas: Canvas, mapData: MapData) {
+    fun drawCoordinates(mapData: MapData) {
         //  表示位置
         var x = 10f
         var y = 40f
@@ -101,7 +101,6 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         }
         coordeMsg += " 標高 " + "%,4.1f m".format(ele) + "(" + type + ") 色 " + mCenterColor
 
-        kdraw.mCanvas = canvas
         kdraw.setColor("Blue")
         kdraw.setTextSize(mInfoTextSize)
         kdraw.drawTextWithBox(coordeMsg, PointD(x.toDouble(), y.toDouble()))
@@ -123,6 +122,12 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         if (0 < mComment.length) {
             y += mInfoTextSize.toFloat() + 10f
             kdraw.drawTextWithBox(mComment, PointD(x.toDouble(), y.toDouble()))
+        }
+        //  測定距離
+        if (mMeasure.mMeasureMode && 1 < mMeasure.mPositionList.size) {
+            y += mInfoTextSize.toFloat() + 10f
+            var dis = mMeasure.measure(mMapData)
+            kdraw.drawTextWithBox("測定距離 %.3f km".format(dis), PointD(x.toDouble(), y.toDouble()))
         }
         //  メッセージ表示(非同期処理など)
         if (0 < mMessage.length) {
@@ -165,7 +170,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
 
     //  中心線表示
     fun drawCross() {
-        kdraw.setProperty("Blue", 4.0, )
+        kdraw.setProperty("Blue", 4.0, Paint.Style.FILL)
         var ctr = PointD(mWidth / 2.0, mHeight / 2.0)
         kdraw.drawLine(PointD(ctr.x - 50.0, ctr.y), PointD(ctr.x + 50.0, ctr.y))
         kdraw.drawLine(PointD(ctr.x, ctr.y - 50.0), PointD(ctr.x, ctr.y + 50.0))
