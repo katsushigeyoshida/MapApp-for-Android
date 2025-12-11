@@ -310,33 +310,21 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {    //  (0)
                 Log.d(TAG, "ACTION_DOWN "+pointCount+" "+mZoomOn+" "+mMoveOn)
-                startTime = event.eventTime
+                startTime = event.eventTime     //  長押し時間測定開始
                 //  画面移動の起点
                 mPreTouchPosition = pos
                 mMoveOn = false
                 //  ズームの初期化
                 mPreTouchDistance = 0.0
                 mZoomOn = false
-                //  距離測定
-//                if (mMeasure.mMeasureMode) {
-//                    mMeasure.add(mMapData.screen2BaseMap(pos))
-//                    if (0 < mMeasure.mPositionList.size)
-//                        mapDisp(mMapDataDownLoadMode)
-//                }
             }
             MotionEvent.ACTION_UP -> {      //  (1)
                 Log.d(TAG, "ACTION_UP "+mZoomOn+" "+mMoveOn)
                 if (!mZoomOn && !mMoveOn) {
-                    endTime = event.eventTime
+                    //  長押しコンテキストメニュー
+                    endTime = event.eventTime   //  長押し終了時間
                     if ((endTime - startTime) > 500 && pos.distance(mPreTouchPosition) < 50) {
-                        //  長押し処理
-//                        if (mMeasure.mMeasureMode) {
-//                            mMeasure.decriment()
-//                        }
-                        //  長押しコンテキストメニュー
                         klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
-                        startTime = 0
-                        endTime = 0
                     }
                 }
             }
@@ -346,7 +334,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     if (1 < mMeasure.mPositionList.size)
                         mMeasure.decriment()
                     mMeasure.add(mMapData.screen2BaseMap(mMapView.getCenter())) //  中心座標追加
-                    Log.d(TAG,"Measure move "+mMeasure.mPositionList.size)
                 }
                 if (mZoomOn && 1 < pointCount) {
                     //  マルチタッチによる拡大縮小
@@ -394,15 +381,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
             MotionEvent.ACTION_POINTER_UP -> {  //  (6)
-//                if (1 < pointCount) {
-//                    //  マルチタッチによる拡大縮小
-//                    var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
-//                    var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
-//                    var dis = pos1.distance(pos2) / mMapData.mCellSize
-//                    var ctr = mMapData.screen2Map(pos1.center(pos2))
-//                    mMapData.setZoom(((dis - mPreTouchDistance) * 2.0), ctr)
-//                }
-//                mapDisp(mMapDataDownLoadMode)
+
             }
         }
         return true;
@@ -531,8 +510,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         mMapInfoData.loadMapInfoData(mMapInfoDataPath)
 
         //  位置画面データの読み込みと保存先フォルダ設定
-//        mAreaData.setSavePath(mDataFolder + mAreaDataListPath)
-//        mAreaData.loadAreaDataList()
+        mAreaData.setSavePath(mDataFolder + mAreaDataListPath)
+        mAreaData.loadAreaDataList()
 
         //  マークリストデータの読み込み
         mMarkList.mSaveFilePath = mDataFolder + mMarkListPath
@@ -803,6 +782,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             mLongTouchMenu.removeAt(n + 1)
             mLongTouchMenu.removeAt(n + 1)
             var dis = mMeasure.measure(mMapData)
+            klib.setTextClipBoard(this, dis.toString())
             klib.messageDialog(this, "測定距離", "%.3f km".format(dis))
             mMeasure.end()
         } else if (mLongTouchMenu[n].compareTo("測定点を一つ戻す") == 0) {

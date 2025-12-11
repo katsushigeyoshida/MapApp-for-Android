@@ -66,8 +66,8 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
 
     //  MapDataをCSVファイルに保存する時のデータ配列のタイトル
     companion object {
-        val mMapDataFormat = listOf("地図名", "地図ID", "拡張子", "セルサイズ", "ズームレベル",
-            "列数", "行数", "X座標", "Y座標")
+        val mMapDataFormat = listOf("地図名", "地図ID", "拡張子", "セルサイズ",
+            "セルズーム", "ズームレベル", "列数", "行数", "X座標", "Y座標")
     }
 
     /**
@@ -79,6 +79,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
         mapData.mMapTitleNum = mMapTitleNum
         mapData.mExt = mExt
         mapData.mCellSize = mCellSize
+        mapData.mCellZoom = mCellZoom
         mapData.mZoom = mZoom
         mapData.mColCount = mColCount
         mapData.mRowCount = mRowCount
@@ -100,6 +101,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
         dataList.add(mMapTitleNum.toString())
         dataList.add(mExt)
         dataList.add(mCellSize.toString())
+        dataList.add(mCellZoom.toString())
         dataList.add(mZoom.toString())
         dataList.add(mColCount.toString())
         dataList.add(mRowCount.toString())
@@ -117,11 +119,12 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
         mMapTitleNum = data[1].toInt()
         mExt         = data[2]
         mCellSize    = data[3].toFloat()
-        mZoom        = data[4].toInt()
-        mColCount    = data[5].toInt()
-        mRowCount    = data[6].toInt()
-        mStart.x     = data[7].toDouble()
-        mStart.y     = data[8].toDouble()
+        mCellZoom    = data[4].toDouble()
+        mZoom        = data[5].toInt()
+        mColCount    = data[6].toInt()
+        mRowCount    = data[7].toInt()
+        mStart.x     = data[8].toDouble()
+        mStart.y     = data[9].toDouble()
         mMapInfoData.setMapTitleNum(mMapTitleNum)
     }
 

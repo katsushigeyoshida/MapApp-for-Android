@@ -16,7 +16,6 @@ class AreaData {
     //  保存ファイルのパス設定
     fun setSavePath(path: String ) {
         mAreaDataListPath = path
-        Log.d(TAG,"setSavePath: "+mAreaDataListPath)
     }
 
     //  ファイルから読み込む

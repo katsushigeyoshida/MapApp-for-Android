@@ -209,9 +209,15 @@ class GpxEditActivity : AppCompatActivity() {
 
     //  距離のデータ変更
     var iDataInfo = Consumer<String> { s ->
-        mGpsTraceList.mDataList[mGpxFilePos].mDistance = klib.str2Double(s)
+        val dis =  klib.str2Double(s)
+        if (0 < dis)
+            mGpsTraceList.mDataList[mGpxFilePos].mDistance = dis
+        else{
+            val gpsFileData = getGpsFileData(mGpsTraceList.mDataList[mGpxFilePos].mFilePath)
+            if (gpsFileData != null)
+                mGpsTraceList.mDataList[mGpxFilePos].mDistance = gpsFileData.mDistance
+        }
         setDataInfo()
-        //Log.d(TAG,"inputDialog: " + s)
     }
 
     //  グループ名をコントロールに設定する関数インターフェース
@@ -283,11 +289,8 @@ class GpxEditActivity : AppCompatActivity() {
      * GPXファイルからGPX情報と測定年をコントロールに登録
      */
     fun setGpxFileInfo(gpxFilePath: String, title: String = "") {
-        if (!klib.existsFile(gpxFilePath))
-            return
-        val gpsFileData = GpsTraceData()
-        gpsFileData.mFilePath = gpxFilePath
-        gpsFileData.loadGpsData()
+        val gpsFileData = getGpsFileData(gpxFilePath)
+        if (gpsFileData == null) return
         edTitle.setText(if (title.isEmpty()) klib.getFileNameWithoutExtension(gpxFilePath) else title)
         spCategory.setSelection(mGpsTraceList.mCategoryMenu.indexOf(gpsFileData.mCategory))
         edGpxPath.setText(gpxFilePath)
@@ -299,6 +302,18 @@ class GpxEditActivity : AppCompatActivity() {
         info += ", " + klib.date2String(gpsFileData.mLastTime, "yyyy/MM/dd HH:mm:ss")
         info += ", " + gpsFileData.mDistance.toString() + " km"
         tvDataInfo.setText(info)
+    }
+
+    /**
+     * GPXファイルからGPX情報を取得
+     */
+    fun getGpsFileData(gpxFilePath: String): GpsTraceData? {
+        if (!klib.existsFile(gpxFilePath))
+            return null
+        val gpsFileData = GpsTraceData()
+        gpsFileData.mFilePath = gpxFilePath
+        gpsFileData.loadGpsData()
+        return  gpsFileData
     }
 
     /**
