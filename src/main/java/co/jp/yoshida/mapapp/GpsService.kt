@@ -71,6 +71,7 @@ class GpsService : Service(), SensorEventListener {
     private val mIntervalTime = 5000L               //  GPS取得インターバル(ms)
     private var mGpsFilePath = ""                   //  GPSデータ保存パス
     private var mGpsCount = 0
+    private var mTitle = "DateTime,Time,Latitude,Longtude,Altitude,Speed,Bearing,Accuracy,StepCountNum,StepCount"
 
     //  歩数カウンタ
     private var mCurrentStepNum = 0     //	現在の歩数
@@ -213,8 +214,7 @@ class GpsService : Service(), SensorEventListener {
         Log.d(TAG,"appendSaveData: "+path+" "+buffer)
         if (!klib.existsFile(path)) {
             //  初回書き込み
-            var title = "DateTime,Time,Latitude,Longtude,Altitude,Speed,Bearing,Accuracy,StepCount"
-            klib.writeFileData(path, title)
+            klib.writeFileData(path, mTitle)
         }
         klib.writeFileDataAppend(path, "\n" + buffer)
     }

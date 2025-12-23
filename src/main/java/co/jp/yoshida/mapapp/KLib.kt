@@ -55,7 +55,7 @@ import kotlin.math.sign
 class KLib {
     val TAG = "KLib"
 
-    //  --- グラフィック関連  ---
+    //  === グラフィック関連  ===
 
     /**
      *  色配列マップ
@@ -164,7 +164,7 @@ class KLib {
         return output
     }
 
-    //  ---  座標処理  ---
+    //  ===  座標処理  ===
 
     /**	地球上の２地点の緯度・経度を指定して最短距離とその方位角を計算
      *	地球を赤道半径r=6378.137kmを半径とする球体として計算しています。
@@ -517,8 +517,25 @@ class KLib {
         return expList
     }
 
-    //  ---  文字列処理  ---
+    //  ===  文字列処理  ===
 
+    /**
+     * 文字列の中のコントロールコードを'\'付きコードに置換
+     */
+    fun cnvControlCode(str: String): String {
+        var buf = str.replace("\n", "\\n")
+        buf = buf.replace("\r", "\\r")
+        return buf
+    }
+
+    /**
+     * 文字列の中の'\'付きコードをコントロールコードに戻す
+     */
+    fun revControlCode(str: String): String {
+        var buf = str.replace("\\n", "\n")
+        buf = buf.replace("\\r", "\r")
+        return buf
+    }
 
     /**
      * 文字列を実数に変換(後についている数値以外の文字は無視する)
@@ -813,7 +830,7 @@ class KLib {
         return n
     }
 
-    //  ---  時間・日付処理  ---
+    //  ===  時間・日付処理  ===
 
     /**
      * 現在の年を取得
@@ -1112,7 +1129,7 @@ class KLib {
         return floor(365.25 * (year + 4716)).toInt() + (30.6001 * (month + 1)).toInt() + day - 1524
     }
 
-    //  ---  ファイル処理  ---
+    //  ===  ファイル処理  ===
 
     /**
      * CSV形式でListデータを保存する
@@ -1757,7 +1774,8 @@ class KLib {
     }
 
 
-    //  ---  HTMLファイル  ---
+    //  === HTMLファイル  ===
+
 
     //  === ダイヤログ関数 ===
 

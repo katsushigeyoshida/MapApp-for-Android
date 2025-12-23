@@ -45,7 +45,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     )
 
     val mUpdateMenu = listOf<String>(
-        "再表示", "データファイル確認", "初期化(データファイル再読込み)"
+        "再表示", "データファイルの更新", "データファイル確認", "初期化(データファイル再読込み)"
     )
     val mRemoveMenu = listOf<String>(           //  非選択メニュー
         "表示分ゴミ箱", "全ゴミ箱解除", "ゴミ箱から削除"
@@ -92,7 +92,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         mGpsTraceList.mGpsTraceFileFolder = mGpsTraceFileFolder
         mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
         mGpsTraceList.loadListFile()
-        mGpsTraceList.getFileData()
+        mGpsTraceList.getFileData(20)
         if (0 < mGpsTraceList.mErrorMessage.length) {
             Log.d(TAG,"onCreate "+ mGpsTraceList.mErrorMessage)
             klib.messageDialog(this, "エラー", mGpsTraceList.mErrorMessage)
@@ -477,13 +477,16 @@ class GpsTraceListActivity : AppCompatActivity() {
             mSelectList = false
             setDataList()
         } else if (s.compareTo(mUpdateMenu[1]) == 0) {
+            //  データファイルの更新
+            klib.messageDialog(this, "確認", "リストの更新をします", iItemUpdateOperation)
+        } else if (s.compareTo(mUpdateMenu[2]) == 0) {
             //  データファイル確認
             val n = mGpsTraceList.existDataFileAll()
             Toast.makeText(this,
                 "データのない " + n.toString() + " 個の項目を削除しました",
                 Toast.LENGTH_LONG).show()
             setDataList()
-        } else if (s.compareTo(mUpdateMenu[2]) == 0) {
+        } else if (s.compareTo(mUpdateMenu[3]) == 0) {
             //  初期化(データファイル読み直し)
             klib.messageDialog(this, "確認", "リストの全項目を初期化します", iAllItemInitOperation)
         }
@@ -494,6 +497,18 @@ class GpsTraceListActivity : AppCompatActivity() {
         if (s.compareTo("OK") == 0) {
             mGpsTraceList.mDataList.clear()
             mGpsTraceList.getFileData()
+            if (0 < mGpsTraceList.mErrorMessage.length)
+                klib.messageDialog(this, "エラー", "データの読込に失敗\n"+mGpsTraceList.mErrorMessage)
+            setDataList()
+        }
+    }
+
+    //  データの更新(未登録データの登録)
+    var iItemUpdateOperation = Consumer<String> { s ->
+        if (s.compareTo("OK") == 0) {
+            mGpsTraceList.getFileData()
+            if (0 < mGpsTraceList.mErrorMessage.length)
+                klib.messageDialog(this, "エラー", "データの読込に失敗\n"+mGpsTraceList.mErrorMessage)
             setDataList()
         }
     }

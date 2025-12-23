@@ -93,13 +93,15 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         var cp = mapData.baseMap2Coordinates(bp)
         var coordeMsg = " 座標 "+"%3.6f".format(cp.y)+","+"%3.6f".format(cp.x)
         var ele = mElevator
+        var acc = ""
         var type = "MAP"
         if (mGpsTrace.mTraceOn && 0 < mGpsTrace.mGpsPointData.size) {
             //  GPS起動時の標高データ
             ele = mGpsTrace.mGpsLastElevator    //  標高(m)
+            acc = " 精度 " + mGpsTrace.mGpsLastAccury.toInt().toString()
             type = "GPS"
         }
-        coordeMsg += " 標高 " + "%,4.1f m".format(ele) + "(" + type + ") 色 " + mCenterColor
+        coordeMsg += " 標高 " + "%,4.1f m".format(ele) + acc + " (" + type + ") 色 " + mCenterColor
 
         kdraw.setColor("Blue")
         kdraw.setTextSize(mInfoTextSize)

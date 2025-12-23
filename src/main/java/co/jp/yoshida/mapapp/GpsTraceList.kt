@@ -7,6 +7,7 @@ import android.graphics.Paint
 import android.location.Location
 import android.location.LocationManager
 import android.util.Log
+import android.widget.Toast
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -245,17 +246,21 @@ class GpsTraceList {
     /**
      * 再帰的にファイルを検索してリストにないデータを追加する
      */
-    fun getFileData() {
+    fun getFileData(maxCount: Int = 0) {
         mErrorMessage = ""
         Log.d(TAG,"getFileData "+mGpsTraceFileFolder)
-        var fileList = klib.getFileList(mGpsTraceFileFolder, true, "*.csv")
+        var fileList = klib.getFileList(mGpsTraceFileFolder, true, "GPS_*.csv")
+        var count = 0
         for (i in fileList.indices) {
             try {
+                if (0 < maxCount && maxCount <= count)
+                    break;
                 if (null == mDataList.find { it.mFilePath.compareTo(fileList[i].absolutePath, true) == 0 }) {  //  ファイル重複チェック
                     var gpsTraceData = GpsTraceData()
                     gpsTraceData.mFilePath = fileList[i].absolutePath
                     gpsTraceData.loadGpsData(false)
                     mDataList.add(gpsTraceData)
+                    count++
                 }
             } catch (e: Exception) {
                 mErrorMessage += fileList[i].absolutePath + " " + e.message + "\n"
@@ -626,7 +631,11 @@ class GpsTraceList {
         try {
             for (i in gpsDataList.indices) {
                 val gpsTraceData = GpsTraceData()
-                gpsTraceData.getStringData(gpsDataList[i])
+                try {
+                    gpsTraceData.getStringData(gpsDataList[i])
+                } catch(e: Exception) {
+                    mErrorMessage = "データ読込エラー" + e.message
+                }
                 if (exist && !klib.existsFile(gpsTraceData.mFilePath))  //  ファイルの存在チェック
                     continue
                 if (null == mDataList.find {
@@ -649,7 +658,11 @@ class GpsTraceList {
     fun saveListFile() {
         var gpsDataList = mutableListOf<List<String>>()
         for (i in mDataList.indices) {
-            gpsDataList.add(mDataList[i].setStringData())
+            try {
+                gpsDataList.add(mDataList[i].setStringData())
+            } catch(e: Exception) {
+                mErrorMessage = "保存データ作成エラー" + e.message
+            }
         }
         klib.saveCsvData(mGpsTraceListPath, GpsTraceData.mDataFormat, gpsDataList)
     }
@@ -856,10 +869,10 @@ class GpsTraceData() {
     fun getStringData(data: List<String>) {
         mLocData.clear()
         mStepCountList.clear()
-        mTitle          = data[0]
-        mGroup          = data[1]
+        mTitle          = klib.revControlCode(data[0])
+        mGroup          = klib.revControlCode(data[1])
         mCategory       = data[2]
-        mComment        = data[3]
+        mComment        = klib.revControlCode(data[3])
         mFilePath       = data[4]
         mVisible        = data[5].toBoolean()
         mLineColor      = data[6]
@@ -882,10 +895,10 @@ class GpsTraceData() {
      */
     fun setStringData(): List<String> {
         val data = mutableListOf<String>()
-        data.add(mTitle)
-        data.add(mGroup)
+        data.add(klib.cnvControlCode(mTitle))
+        data.add(klib.cnvControlCode(mGroup))
         data.add(mCategory)
-        data.add(mComment)
+        data.add(klib.cnvControlCode(mComment))
         data.add(mFilePath)
         data.add(mVisible.toString())
         data.add(mLineColor)

@@ -27,6 +27,7 @@ class GpsTrace {
     var mGpsData = mutableListOf<Location>()        //  GPSトレースのデータリスト(フルデータ)
     var mGpsPointData = mutableListOf<PointD>()     //  GPSトレースのデータリスト(座標のみの簡易形式)
     var mGpsLastElevator = 0.0                      //  GPSトレースの標高最新値
+    var mGpsLastAccury = 0.0
     var mStepCount = mutableListOf<Int>()           //  歩数のレスとデータ
     var mGpsLap = mutableListOf<Long>()             //  GPS経過時間
     var mLineColor = Color.GREEN                    //  トレース中の線の色
@@ -187,6 +188,7 @@ class GpsTrace {
         }
         if (0 < listData.size) {
             mGpsLastElevator = listData.last()[4].toDouble()
+            mGpsLastAccury = listData.last()[7].toDouble()
         }
     }
 

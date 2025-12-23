@@ -279,8 +279,8 @@ class GpxEditActivity : AppCompatActivity() {
      * 開始時間根終了時間、距離の表示設定
      */
     fun setDataInfo() {
-        var info = "開始 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mFirstTime, "yyyy/MM/dd HH:mm:ss")
-        info += ", 終了 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mLastTime, "yyyy/MM/dd HH:mm:ss")
+        var info = "開始 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mFirstTime, "yyyy/MM/dd HH:mm:ss", 0)
+        info += ", 終了 " + klib.date2String(mGpsTraceList.mDataList[mGpxFilePos].mLastTime, "yyyy/MM/dd HH:mm:ss", 0)
         info += ", 距離 " + mGpsTraceList.mDataList[mGpxFilePos].mDistance.toString() + " km"
         tvDataInfo.setText(info)
     }
