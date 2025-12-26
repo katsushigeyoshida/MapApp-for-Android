@@ -45,7 +45,8 @@ class GpsTraceListGraphView(context: Context): View(context) {
         "速度" to "(km/h)",
         "最大高度" to "(m)",
         "累積標高差" to "(m)",
-        "歩数" to ""
+        "歩数" to "",
+        "消費カロリー" to "kcal"
     )
 
     var kdraw = KDraw()

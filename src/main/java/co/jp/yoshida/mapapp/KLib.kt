@@ -835,7 +835,7 @@ class KLib {
     /**
      * 現在の年を取得
      */
-    fun getNowDate(form:String = "YYYYMMdd_HHmmss"): String {
+    fun getNowDate(form:String = "yyyyMMdd_HHmmss"): String {
         val ldt = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern(form)
         return ldt.format(formatter)

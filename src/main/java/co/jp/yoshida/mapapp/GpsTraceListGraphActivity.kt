@@ -26,7 +26,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 
     val mSpanMenu = listOf("年","半年","3ヶ月","1ヶ月")
     val mCollectUnitMenu = listOf("回","日","週","月")
-    val mDataTypeMenu = listOf("移動距離","移動時間","速度","最大高度","累積標高差","歩数")
+    val mDataTypeMenu = listOf("移動距離","移動時間","速度","最大高度","累積標高差","歩数", "消費カロリー")
 
     var mGpsTraceList = GpsTraceList()              //  GPXファイルリスト
     var mGpsTraceFileFolder = ""                    //  GPXファイルリストパス

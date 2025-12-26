@@ -128,7 +128,7 @@ class GpsTrace {
     fun moveGpsFile(moveFolder: String, orgPath: String = mGpsPath) {
         if (klib.existsFile(orgPath)) {
             val traceStarTime = klib.getStrPreferences("GpsTraceStartTime", mC)
-            val destFolder = moveFolder + "/" + klib.getNowDate("YYYY")
+            val destFolder = moveFolder + "/" + klib.getNowDate("yyyy")
             if (klib.mkdir(destFolder)) {
                 var destPath = destFolder + "/" + "GPS_" + traceStarTime + ".csv"
                 if (!klib.renameFile(orgPath, destPath)) {

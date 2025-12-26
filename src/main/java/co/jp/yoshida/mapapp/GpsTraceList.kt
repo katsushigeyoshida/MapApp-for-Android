@@ -7,7 +7,6 @@ import android.graphics.Paint
 import android.location.Location
 import android.location.LocationManager
 import android.util.Log
-import android.widget.Toast
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.util.Calendar
@@ -33,7 +32,7 @@ enum class CollectUnit(val menu: String) {
 class GraphData() {
     var collectUnit = CollectUnit.Time      //  集計単位
     var unitPostion = 0                     //  集計単位ごとの位置(回の時は常に秒)
-    var category = ""                       //  分類
+    var category = ""                       //  分類(散歩、ウォーキング、ジョギング・・・)
     var dateTime = Date()                   //  開始日
     var distance = 0.0                      //  移動距離(km)
     var lapTime = 0.0                       //  移動時間(sec)
@@ -43,6 +42,22 @@ class GraphData() {
     var elevationDiff = 0.0                 //  標高差
     var stepCount = 0                       //  歩数
     var dataCount = 0                       //  累積データ数
+    var caloriesBurned = 0.0                //  消費カロリー
+
+    var wait = 70.0                         //  体重(kg)
+    //　メッツ値 消費カロリー(kcal) = メッツ値 x 体重(kg) x 活動実施時間(hour)
+    val mets = mapOf<String, Double>(
+        "散歩" to 3.0,
+        "ウォーキング" to 5.0,
+        "ジョギング" to 7.0,
+        "ランニング" to 9.0,
+        "山歩き" to 6.0,
+        "サイクリング" to 8.0,
+        "自転車" to 4.0,
+        "車・バス・鉄道" to 0.0,
+        "飛行機" to 0.0,
+        "旅行" to 0.0,
+    )
 
     val klib = KLib()
 
@@ -62,6 +77,7 @@ class GraphData() {
         elevationDiff = maxElevator - minElevator
         stepCount   = data.mStepCount
         dataCount = 1
+        caloriesBurned = getColoriesBurned(category, wait, lapTime)
         this.collectUnit = collectUnit
         unitPostion = collectUnitPosition(dateTime, collectUnit)
     }
@@ -80,6 +96,7 @@ class GraphData() {
         elevationDiff = data.elevationDiff
         stepCount   = data.stepCount
         dataCount = 1
+        caloriesBurned = getColoriesBurned(category, wait, lapTime)
         this.collectUnit = collectUnit
         unitPostion = collectUnitPosition(dateTime, collectUnit)
     }
@@ -99,6 +116,7 @@ class GraphData() {
         minElevator = min(minElevator, data.mMinElevation)
         elevationDiff += data.mMaxElevation - minElevator
         stepCount += data.mStepCount
+        caloriesBurned += getColoriesBurned(data.mCategory, wait, data.getLapTime())
         dataCount++
     }
     /**
@@ -117,6 +135,7 @@ class GraphData() {
         minElevator = min(minElevator, data.minElevator)
         elevationDiff += data.elevationDiff
         stepCount += data.stepCount
+        caloriesBurned += getColoriesBurned(data.category, wait, data.lapTime)
         dataCount++
     }
 
@@ -131,6 +150,7 @@ class GraphData() {
         minElevator = min(minElevator, data.minElevator)
         elevationDiff = max(elevationDiff, data.elevationDiff)
         stepCount   = max(stepCount,data.stepCount)
+        caloriesBurned = max(caloriesBurned, data.caloriesBurned)
         dataCount++
     }
 
@@ -145,6 +165,7 @@ class GraphData() {
         minElevator = max(minElevator, data.minElevator)
         elevationDiff = min(elevationDiff, data.elevationDiff)
         stepCount   = min(stepCount,data.stepCount)
+        caloriesBurned = min(caloriesBurned, data.caloriesBurned)
         dataCount++
     }
 
@@ -170,14 +191,23 @@ class GraphData() {
      */
     fun getDataType(type: String): Double {
         return when (type) {
-            "移動距離"  -> distance
-            "移動時間"  -> lapTime
-            "速度"     -> speed
-            "最大高度"  -> maxElevator
-            "累積標高差" -> elevationDiff
-            "歩数"      -> stepCount.toDouble()
-            else       -> 0.0
+            "移動距離"    -> distance
+            "移動時間"    -> lapTime
+            "速度"       -> speed
+            "最大高度"    -> maxElevator
+            "累積標高差"   -> elevationDiff
+            "歩数"        -> stepCount.toDouble()
+            "消費カロリー" -> caloriesBurned
+            else         -> 0.0
         }
+    }
+
+    /**
+     * 消費カロリー(kcol)
+     * category: 分類, wait: 体重(kg), lapTime: 経過時間(sec)
+     */
+    fun getColoriesBurned(category: String, wait: Double, lapTime: Double): Double {
+        return (mets[category]?:0.0) * wait * lapTime / 3600.0
     }
 
     override fun toString(): String {
@@ -214,7 +244,8 @@ class GpsTraceList {
         "Cyan", "Gray", "LightGray", "Magenta", "DarkGray", "Transparent")
     //  分類メニュー
     val mCategoryMenu = mutableListOf<String>(
-        "散歩", "ウォーキング", "ジョギング", "ランニング", "山歩き", "自転車", "車・バス・鉄道", "飛行機", "旅行")
+        "散歩", "ウォーキング", "ジョギング", "ランニング", "山歩き",
+        "サイクリング", "自転車", "車・バス・鉄道", "飛行機", "旅行")
 
     lateinit var mC: Context
     val klib = KLib()
@@ -286,6 +317,25 @@ class GpsTraceList {
     }
 
     /**
+     * 月リストの取得
+     * firstItem        リストの最初に追加するアイテム
+     */
+    fun getMonthList(year: Int, firstItem:String = ""): List<String> {
+        var monthList = mutableListOf<String>()
+        for (i in mDataList.indices) {
+            if ((year == 0 || klib.date2Year(mDataList[i].mFirstTime) == year)) {
+                val month = mDataList[i].getMonthStr()
+                if (!monthList.contains(month))
+                    monthList.add(month)
+            }
+        }
+        monthList.sortByDescending { klib.str2Integer(it) }
+        if (0 < firstItem.length)
+            monthList.add(0, firstItem)
+        return monthList
+    }
+
+    /**
      * 分類リストの取得
      * year         対象年
      * firstItem    リストの最初に追加するアイテム
@@ -307,11 +357,12 @@ class GpsTraceList {
      *  グループリストの取得
      *  firstTitle  リストの最初に追加するタイトル
      */
-    fun getGroupList(firstTitle: String = ""): List<String> {
+    fun getGroupList(year: Int, firstTitle: String = ""): List<String> {
         var groupList = mutableListOf<String>()
-        for (markData in mDataList) {
-            if (!groupList.contains(markData.mGroup))
-                groupList.add(markData.mGroup)
+        for (i in mDataList.indices) {
+            if ((year == 0 || klib.date2Year(mDataList[i].mFirstTime) == year) &&
+                !groupList.contains(mDataList[i].mGroup))
+                groupList.add(mDataList[i].mGroup)
         }
         groupList.sortDescending()
         if (0 < firstTitle.length)
@@ -474,7 +525,7 @@ class GpsTraceList {
      *  pathOffset: Int = 0 保存フォルダのオフセット値
      *  return              タイトルリスト
      */
-    fun getListTitleData(year: String, category: String, group: String, titleType: Int = 0, pathOffset: Int = 0): List<String> {
+    fun getListTitleData(year: String, month: String, category: String, group: String, titleType: Int = 0, pathOffset: Int = 0): List<String> {
         //  ソート処理
         if (mDataListSortCending) {
             if (mDataListSortType == DATALISTSORTTYPE.DATE) {
@@ -502,6 +553,7 @@ class GpsTraceList {
         var titleList = mutableListOf<String>()
         for (gpsFileData in mDataList) {
             if ((year.compareTo(mAllListName) == 0 || gpsFileData.getYearStr().compareTo(year) == 0) &&
+                (month.compareTo(mAllListName) == 0 || gpsFileData.getMonthStr().compareTo(month) == 0) &&
                 (category.compareTo(mAllListName) == 0 || gpsFileData.mCategory.compareTo(category) == 0) &&
                 ((group.compareTo(mAllListName) == 0 && gpsFileData.mGroup.compareTo(mTrashGroup) != 0)
                         || gpsFileData.mGroup.compareTo(group) == 0)) {
@@ -656,6 +708,13 @@ class GpsTraceList {
      * リストデータを保存
      */
     fun saveListFile() {
+        saveListFile(mGpsTraceListPath)
+    }
+
+    /**
+     * リストデータをファイルに保存
+     */
+    fun saveListFile(path: String) {
         var gpsDataList = mutableListOf<List<String>>()
         for (i in mDataList.indices) {
             try {
@@ -664,7 +723,20 @@ class GpsTraceList {
                 mErrorMessage = "保存データ作成エラー" + e.message
             }
         }
-        klib.saveCsvData(mGpsTraceListPath, GpsTraceData.mDataFormat, gpsDataList)
+        klib.saveCsvData(path, GpsTraceData.mDataFormat, gpsDataList)
+    }
+
+    /**
+     * バックアップフォルダにリストデータを日付を付けてファイル保存する
+     */
+    fun backupListFile() {
+        var folder = klib.getFolder(mGpsTraceListPath) + "/Backup"
+        if (klib.mkdir(folder)) {
+            var fileName = klib.getFileNameWithoutExtension(mGpsTraceListPath)
+            fileName += klib.getNowDate("_yyyyMMddHHmmss.") + klib.getNameExt(mGpsTraceListPath)
+            var path = folder + "/" + fileName
+            saveListFile(path)
+        }
     }
 
 
@@ -798,6 +870,15 @@ class GpsTraceData() {
     fun getYearStr(): String {
         val tz = Date().getTimezoneOffset() / 60 + 9    //  タイムゾーン(時)
         return klib.date2String(mFirstTime, "yyyy年", tz)
+    }
+
+    /**
+     * データの開始日時の月を取出す(xx月)
+     * return           xx月
+     */
+    fun getMonthStr(): String {
+        val tz = Date().getTimezoneOffset() / 60 + 9    //  タイムゾーン(時)
+        return klib.date2String(mFirstTime, "M月", tz)
     }
 
     /**
@@ -1133,11 +1214,11 @@ class GpsTraceData() {
             } else if (speed < 30.0) {              //  速度 12-30km/h
                 return "ランニング"
             } else {
-                return "自転車"
+                return "サイクリング"
             }
         } else {
             if (speed < 40.0) {                     //  速度 12-30km/h
-                return "自転車"
+                return "サイクリング"
             } else if (speed < 200.0)  {
                 return "車・バス・鉄道"
             } else {

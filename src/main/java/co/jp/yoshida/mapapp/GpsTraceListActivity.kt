@@ -10,7 +10,6 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.Consumer
 import androidx.core.view.size
@@ -24,6 +23,7 @@ class GpsTraceListActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityGpsTraceListBinding
     lateinit var spYear: Spinner
+    lateinit var spMonth: Spinner
     lateinit var spGroup: Spinner
     lateinit var spCategory: Spinner
     lateinit var btUpdate: Button
@@ -45,7 +45,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     )
 
     val mUpdateMenu = listOf<String>(
-        "再表示", "データファイルの更新", "データファイル確認", "初期化(データファイル再読込み)"
+        "再表示", "リストファイルの更新", "データファイル確認", "初期化(データファイル再読込み)", "リストファイルバックアップ"
     )
     val mRemoveMenu = listOf<String>(           //  非選択メニュー
         "表示分ゴミ箱", "全ゴミ箱解除", "ゴミ箱から削除"
@@ -113,8 +113,10 @@ class GpsTraceListActivity : AppCompatActivity() {
             REQUESTCODE_CSVEDIT -> {
                 if (resultCode == RESULT_OK) {
                     mGpsTraceList.loadListFile()
+                    pushSelectItem()
                     setSpinnerData()
                     setDataList()
+                    popSelectItem(0)
                 }
             }
         }
@@ -127,6 +129,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         binding = ActivityGpsTraceListBinding.inflate(layoutInflater)
         setContentView(binding.root)
         spYear     = binding.spinner7
+        spMonth    = binding.spinner14
         spGroup    = binding.spinner8
         spCategory = binding.spinner9
         btUpdate   = binding.button17
@@ -140,27 +143,34 @@ class GpsTraceListActivity : AppCompatActivity() {
         lvDataList = binding.gpsTraceListView
 
         setSpinnerData()
-        setDataList()
+        setDataList(true)
 
         //  [データ年]選択でのフィルタ処理
         spYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
                 if (mSpinnerEnabled) {
+                    pushSelectItem()
+                    setSpinnerMonth(getCurYear())
+                    setSpinnerGroup(getCurYear())
                     setSpinnerCategory(getCurYear())
                     setDataList()
-                }
+                    popSelectItem(1)
+                } else
+                    mSpinnerEnabled = true
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
         }
 
-        //  [分類]選択でのフィルタ処理
-        spCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+        //  [データ月]選択でのフィルタ処理
+        spMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
                 if (mSpinnerEnabled)
                     setDataList()
+                else
+                    mSpinnerEnabled = true
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
@@ -172,10 +182,26 @@ class GpsTraceListActivity : AppCompatActivity() {
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (mSpinnerEnabled)
                     setDataList()
+                else
+                    mSpinnerEnabled = true
             }
             override fun onNothingSelected(parent: AdapterView<*>?) {
             }
         }
+
+        //  [分類]選択でのフィルタ処理
+        spCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(
+                parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
+                if (mSpinnerEnabled)
+                    setDataList()
+                else
+                    mSpinnerEnabled = true
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+            }
+        }
+
 
         /**
          * [選択モード]切替
@@ -489,6 +515,9 @@ class GpsTraceListActivity : AppCompatActivity() {
         } else if (s.compareTo(mUpdateMenu[3]) == 0) {
             //  初期化(データファイル読み直し)
             klib.messageDialog(this, "確認", "リストの全項目を初期化します", iAllItemInitOperation)
+        } else if (s.compareTo(mUpdateMenu[4]) == 0) {
+            //  リストファイルバックアップ
+            mGpsTraceList.backupListFile()
         }
     }
 
@@ -685,40 +714,61 @@ class GpsTraceListActivity : AppCompatActivity() {
     }
 
     /**
-     * データ年、分類、グループデータをspinnerに登録
+     * 年、分類、グループデータをspinnerに登録
      */
     fun setSpinnerData(){
-        mSpinnerEnabled = false
-        var firstYearPos = if (spYear.adapter == null) true else false
-        //  選択値の取得
-        val yearItem = if (spYear.adapter == null) mGpsTraceList.mAllListName
-                       else spYear.selectedItem.toString()
-        val groupItem = if (spGroup.adapter == null) mGpsTraceList.mAllListName
-                        else spGroup.selectedItem.toString()
-        val categoryItem = if (spCategory.adapter == null) mGpsTraceList.mAllListName
-                           else spCategory.selectedItem.toString()
-
         //  データの年をspinnerに登録
         spYear.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
             mGpsTraceList.getYearList(mGpsTraceList.mAllListName))
+        //  データの月をspinnerに登録
+        setSpinnerMonth(getCurYear())
         //  グループをspinnerに登録
-        spGroup.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
-            mGpsTraceList.getGroupList(mGpsTraceList.mAllListName))
+        setSpinnerGroup(getCurYear())
         //  分類をspinnerに登録
         setSpinnerCategory(getCurYear())
+    }
+
+    /**
+     * 一覧リストを設定し、分類(spinner)の選択位置を設定
+     *  firstYearPos 年の選択位置を1にする(最新年)
+     */
+    fun setDataList(firstYearPos: Boolean = false) {
+        val year     = spYear.selectedItem.toString()
+        val month    = spMonth.selectedItem.toString()
+        val group    = spGroup.selectedItem.toString()
+        val category = spCategory.selectedItem.toString()
+        var traceFolderLength = mGpsTraceFileFolder.lastIndexOf('/', mGpsTraceFileFolder.lastIndexOf('/') - 1) + 1
+
+        if (mSelectList) {
+            //  選択リスト
+            var listTitleAdapter = ArrayAdapter(this, R.layout.my_simple_list_item_checked,
+                mGpsTraceList.getListTitleData(year, month, category, group, mListTitleType, traceFolderLength))
+            lvDataList.choiceMode = ListView.CHOICE_MODE_MULTIPLE
+            lvDataList.adapter = listTitleAdapter
+            //  visibleをcheckに設定
+            lvDataList.clearChoices()
+            btExport.isEnabled = true
+        } else {
+            //  通常リスト
+            var listTitleAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1,
+                mGpsTraceList.getListTitleData(year, month, category, group, mListTitleType, traceFolderLength))
+            lvDataList.adapter = listTitleAdapter
+            btExport.isEnabled = false
+        }
 
         //  選択値を元に戻す
-        val yearPos     = if (firstYearPos && 1 <spYear.adapter.count) 1
-                          else mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(yearItem)
-        val groupPos    = mGpsTraceList.getGroupList(mGpsTraceList.mAllListName).indexOf(groupItem)
-        val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(categoryItem)
-        if (0 <= yearPos)
-            spYear.setSelection(yearPos)
-        if (0 <= groupPos)
-            spGroup.setSelection(groupPos)
-        if (0 <= categoryPos)
-            spCategory.setSelection(categoryPos)
-        mSpinnerEnabled = true
+        val yearPos     = if (firstYearPos && 1 < spYear.adapter.count) 1
+                            else mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(year)
+        val monthPos    = mGpsTraceList.getMonthList(getCurYear(), mGpsTraceList.mAllListName).indexOf(month)
+        val groupPos    = mGpsTraceList.getGroupList(getCurYear(), mGpsTraceList.mAllListName).indexOf(group)
+        val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(category)
+
+        if (0 <= yearPos) spYear.setSelection(yearPos)
+        if (0 <= monthPos) spMonth.setSelection(monthPos)
+        if (0 <= groupPos) spGroup.setSelection(groupPos)
+        if (0 <= categoryPos) spCategory.setSelection(categoryPos)
+
+        title = "GPSトレースデータ(${lvDataList.adapter.count})"
     }
 
     /**
@@ -732,6 +782,22 @@ class GpsTraceListActivity : AppCompatActivity() {
     }
 
     /**
+     * monthのspinner設定を年に合わせて設定する
+     */
+    fun setSpinnerMonth(year: Int) {
+        spMonth.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
+            mGpsTraceList.getMonthList(year,mGpsTraceList.mAllListName))
+    }
+
+    /**
+     * categoryのspinner設定を年に合わせて設定する
+     */
+    fun setSpinnerGroup(year: Int) {
+        spGroup.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
+            mGpsTraceList.getGroupList(year,mGpsTraceList.mAllListName))
+    }
+
+    /**
      * categoryのspinner設定を年に合わせて設定する
      */
     fun setSpinnerCategory(year: Int) {
@@ -739,40 +805,35 @@ class GpsTraceListActivity : AppCompatActivity() {
             mGpsTraceList.getCategoryList(year,mGpsTraceList.mAllListName))
     }
 
-    /**
-     * 一覧リストを設定する
-     */
-    fun setDataList() {
-        val year     = spYear.selectedItem.toString()
-        val group    = spGroup.selectedItem.toString()
-        val category = spCategory.selectedItem.toString()
-        var traceFolderLength = mGpsTraceFileFolder.lastIndexOf('/', mGpsTraceFileFolder.lastIndexOf('/') - 1) + 1
 
-        if (mSelectList) {
-            //  選択リスト
-            var listTitleAdapter = ArrayAdapter(this, R.layout.my_simple_list_item_checked,
-                mGpsTraceList.getListTitleData(year, category, group, mListTitleType, traceFolderLength))
-            lvDataList.choiceMode = ListView.CHOICE_MODE_MULTIPLE
-            lvDataList.adapter = listTitleAdapter
-            //  visibleをcheckに設定
-            lvDataList.clearChoices()
-            btExport.isEnabled = true
-        } else {
-            //  通常リスト
-            var listTitleAdapter = ArrayAdapter(
-                this, android.R.layout.simple_list_item_1,
-                mGpsTraceList.getListTitleData(
-                    year,
-                    category,
-                    group,
-                    mListTitleType,
-                    traceFolderLength
-                )
-            )
-            lvDataList.adapter = listTitleAdapter
-            btExport.isEnabled = false
-        }
-        title = "GPSトレースデータ(${lvDataList.adapter.count})"
+    private  var mYearSelectItem = ""
+    private  var mMonthSelectItem = ""
+    private  var mGroupSelectItem = ""
+    private  var mCategorySelectItem = ""
+
+    /**
+     * 年、月、グループ、分類の選択値を保存
+     */
+    fun pushSelectItem() {
+        mYearSelectItem     = spYear.selectedItem.toString()
+        mMonthSelectItem    = spMonth.selectedItem.toString()
+        mGroupSelectItem    = spGroup.selectedItem.toString()
+        mCategorySelectItem = spCategory.selectedItem.toString()
+    }
+
+    /**
+     * 年、月、グループ、分類の選択値を戻す
+     *   level 0:すべて 1:年をのぞく 2:年と月を除く3:年、月、グループを除く 3: すべてを除く
+     */
+    fun popSelectItem(level: Int = 1) {
+        val yearPos     = mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(mYearSelectItem)
+        val monthPos    = mGpsTraceList.getMonthList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mMonthSelectItem)
+        val groupPos    = mGpsTraceList.getGroupList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mGroupSelectItem)
+        val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mCategorySelectItem)
+        if (level < 1 && 0 <= yearPos)     spYear.setSelection(yearPos)
+        if (level < 2 && 0 <= monthPos)    spMonth.setSelection(monthPos)
+        if (level < 3 && 0 <= groupPos)    spGroup.setSelection(groupPos)
+        if (level < 4 && 0 <= categoryPos) spCategory.setSelection(categoryPos)
     }
 
 }

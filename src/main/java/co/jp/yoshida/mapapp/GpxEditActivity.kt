@@ -152,7 +152,7 @@ class GpxEditActivity : AppCompatActivity() {
 
         //  グループ設定
         btGruopRef.setOnClickListener {
-            var groupList = mGpsTraceList.getGroupList("")
+            var groupList = mGpsTraceList.getGroupList(0,"")
             klib.setMenuDialog(this, "グループ", groupList, iGpxGroup)
         }
 
