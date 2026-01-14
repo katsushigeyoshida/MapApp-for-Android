@@ -3,6 +3,8 @@ package co.jp.yoshida.mapapp
 import android.content.Context
 import android.util.Log
 import android.util.Size
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 
 /**
@@ -33,6 +35,11 @@ import java.time.LocalDateTime
 class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     val TAG = "MapData"
 
+    //  初回起動時の地図の位置(日本全体)
+    val DEFULTZOOM = 6
+    val DEFUALTXPOS = 56.0f
+    val DEFUALTYPOS = 23.0f
+    val DEFUALTCOLCOUNT = 2
     val mZoomName = listOf(                             //  ズームレベル(spinner表示用)
         "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
         "11", "12", "13", "14", "15", "16", "17", "18")
@@ -43,10 +50,10 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     var mExt = "png"                                    //  タイル画像の拡張子
     var mCellSize = 256f                                //  タイル画像の大きさ(辺の長さ)
     var mCellZoom = 1.0                                 //  タイル画像(セル)の拡大率
-    var mZoom = 1                                       //  ズームレベル
+    var mZoom = 5                                       //  ズームレベル
     var mColCount = 2                                   //  表示列数
     var mRowCount = 2                                   //  表示行数
-    var mStart = PointD(0.0, 0.0)                  //  表示開始座標(Map座標)
+    var mStart = PointD(26.0, 11.0)                //  表示開始座標(Map座標)
     var mView = Size(1000, 1000)            //  表示するViewの大きさ
     var mMapUrl = ""                                    //  地図データURL
     var mElevatorDataNo = 0                             //  使用標高データのNo
@@ -57,6 +64,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     var mBaseFolder = ""                                //  Mapデータ保存フォルダ
     var mDataFolder = ""                                //  App直下のデータフォルダ
     val mImageFileSet = mutableSetOf<String>()          //  ダウンロードしたファイルリスト(Web上に存在しないファイルも登録)
+    val mWebDownLoadingebFile = mutableSetOf<String>()    //  ダウンロード中のファイル
     var mDateTimeFolder = ""                            //  日時フォルダ名
     var mDispMapPreDateTime = LocalDateTime.now()       //
     val mImageFileSetName = "ImageFileSet.csv"          //  ダウンロードしたファイルリストのファイル名
@@ -230,7 +238,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     fun getElevatorDataFile(x: Int, y: Int, fileUdate: MainActivity.WebFileDownLoad) {
         val elevatorUrl = getElevatorWebAddress(x, y)
         val downloadPath = downloadElevatorPath(x, y)
-        getDownLoadFile(elevatorUrl, downloadPath, fileUdate)
+        getDownLoadFile2(elevatorUrl, downloadPath, fileUdate)
     }
 
     /**
@@ -336,7 +344,7 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
     fun getMapDataDownload(x: Int, y: Int, fileUdate: MainActivity.WebFileDownLoad): String {
         var mapUrl = mMapInfoData.getMapWebAddress(mZoom, x, y, mMapTitleNum)
         var downLoadPath = downloadPath(x, y)
-        getDownLoadFile(mapUrl, downLoadPath, fileUdate)
+        getDownLoadFile2(mapUrl, downLoadPath, fileUdate)
         return downLoadPath
     }
 
@@ -397,6 +405,30 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
                     Thread.sleep(100L)
                 }
                 mImageFileSet.add(dataUrl)  //  ダウンロードしたファイルをリスト登録
+            }
+        }
+    }
+
+    /**
+     * タイルデータをWebからダウンロードする(非同期処理)
+     * 非同期処理によってデータのダウンロードが完了していない場合でも mWebDownLoadingFile にファイル名を登録して抜け
+     * 二重ダウンロードを避ける。ダウンロードが完了すると mWebDownLoadingebFile からぁいる名を削除する
+     * dataUrl          データWebアドレス
+     * downLoadFile     ダウンロードパス
+     * fileUpdate       データ取得モード
+     */
+    fun getDownLoadFile2(dataUrl: String, downLoadFile: String, fileUdate: MainActivity.WebFileDownLoad) {
+        if ((fileUdate == MainActivity.WebFileDownLoad.ALLUPDATE || !klib.existsFile(downLoadFile)) &&
+            fileUdate != MainActivity.WebFileDownLoad.OFFLINE) {
+            if (fileUdate != MainActivity.WebFileDownLoad.NORMAL || !mImageFileSet.contains(dataUrl) ||
+                !mWebDownLoadingebFile.contains(dataUrl)) {
+                mWebDownLoadingebFile.add(dataUrl)
+                //  非同期処理
+                GlobalScope.launch {
+                    var downLoad = klib.DownLoadWebFile(dataUrl, downLoadFile)
+                    mWebDownLoadingebFile.remove(dataUrl)
+                    mImageFileSet.add(dataUrl)  //  ダウンロードしたファイルをリスト登録
+                }
             }
         }
     }
@@ -505,10 +537,10 @@ class MapData(var context: Context, var mMapInfoData: MapInfoData) {
      */
     fun loadParameter() {
         mMapTitleNum = klib.getIntPreferences("MapDataID", context)
-        mZoom = klib.getIntPreferences("MapZoomLevel", 1, context)
-        mColCount = klib.getIntPreferences("MapColCount", 2, context)
-        mStart.x = klib.getFloatPreferences("MapStartX", context).toDouble()
-        mStart.y = klib.getFloatPreferences("MapStartY", context).toDouble()
+        mZoom = klib.getIntPreferences("MapZoomLevel", DEFULTZOOM, context)
+        mColCount = klib.getIntPreferences("MapColCount", DEFUALTCOLCOUNT, context)
+        mStart.x = klib.getFloatPreferences("MapStartX", DEFUALTXPOS, context).toDouble()
+        mStart.y = klib.getFloatPreferences("MapStartY", DEFUALTYPOS, context).toDouble()
         normarized()
     }
 

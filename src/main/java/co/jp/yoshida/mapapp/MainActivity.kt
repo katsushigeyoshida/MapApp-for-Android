@@ -24,6 +24,7 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -167,7 +168,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
+        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         mAppTitle = getString(R.string.app_name)
 
@@ -317,6 +318,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 //  ズームの初期化
                 mPreTouchDistance = 0.0
                 mZoomOn = false
+                return true
             }
             MotionEvent.ACTION_UP -> {      //  (1)
                 Log.d(TAG, "ACTION_UP "+mZoomOn+" "+mMoveOn)
@@ -326,6 +328,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     if ((endTime - startTime) > 500 && pos.distance(mPreTouchPosition) < 50) {
                         klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
                     }
+                    return true
                 }
             }
             MotionEvent.ACTION_MOVE -> {    //  (2)
@@ -347,6 +350,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         mapDisp(mMapDataDownLoadMode)
                         mPreTouchDistance = dis
                     }
+                    return true
                 } else if (!mZoomOn) {
                     Log.d(TAG, "ACTION_MOVE move "+mZoomOn+" "+mMoveOn)
                     //  画面移動
@@ -358,6 +362,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                         mapDisp(mMapDataDownLoadMode)
                         mPreTouchPosition = pos.toCopy()
                     }
+                    return true
                 }
             }
             MotionEvent.ACTION_POINTER_2_DOWN -> {  //  (261)
@@ -369,6 +374,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     mMultiTouchCenter = mMapData.screen2Map(pos1.center(pos2))
                     mPreTouchDistance = pos1.distance(pos2)
                     mZoomOn = true
+                    return true
                 }
             }
             MotionEvent.ACTION_POINTER_DOWN -> {  //  (5)
@@ -378,14 +384,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
                     mPreTouchDistance = pos1.distance(pos2)
                     mZoomOn = true
+                    return true
                 }
             }
             MotionEvent.ACTION_POINTER_UP -> {  //  (6)
 
             }
         }
-        return true;
-//        return super.onTouchEvent(event)
+        return super.onTouchEvent(event)    //  処理なし
     }
 
     /**
@@ -654,6 +660,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             }
             klib.setMenuDialog(this, "予測時間", timeString, iTimeIncSelectOperation)
         }
+
+        //  地図長押しでメニュー表示(moveが使えなくなる)
+//        linearLayoutMap.setOnLongClickListener {
+//            Toast.makeText(this, "Mapが長押しされました", Toast.LENGTH_SHORT).show()
+//            klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
+//            false    //  true: onClickは実行しない
+//        }
     }
 
     //  時刻設定の地図データの予測時間設定

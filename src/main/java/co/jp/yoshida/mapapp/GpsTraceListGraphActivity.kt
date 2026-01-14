@@ -36,7 +36,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        enableEdgeToEdge()
+        enableEdgeToEdge()
         setContentView(R.layout.activity_gps_trace_list_graph)
 
         mGpsTraceFileFolder = intent.getStringExtra("GPSTRACEFOLDER").toString()

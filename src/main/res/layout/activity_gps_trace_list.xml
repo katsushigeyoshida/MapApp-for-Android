@@ -35,6 +35,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         app:icon="@drawable/ic_baseline_sync_24"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -45,6 +46,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="5dp"
         app:icon="@drawable/ic_baseline_delete_24"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -55,6 +57,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="5dp"
         app:icon="@drawable/ic_baseline_sort_24"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -65,6 +68,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         android:paddingRight="0dp"
         app:icon="@drawable/ic_baseline_route_24"
@@ -87,7 +91,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="32dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="48dp"
         android:text="年"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -97,26 +101,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="60dp"
-        android:layout_marginTop="24dp"
         android:text="グループ"
         app:layout_constraintStart_toEndOf="@+id/textView37"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/textView37" />
 
     <TextView
         android:id="@+id/textView36"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="60dp"
-        android:layout_marginTop="24dp"
         android:text="分類"
         app:layout_constraintStart_toEndOf="@+id/textView35"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/textView35" />
 
     <Button
         android:id="@+id/button25"
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         app:icon="@drawable/ic_outline_playlist_add_check_24"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -127,6 +130,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         android:paddingRight="0dp"
         app:icon="@drawable/ic_baseline_playlist_add_24"
@@ -138,6 +142,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         android:paddingRight="0dp"
         app:icon="@drawable/ic_baseline_output_24"
@@ -149,6 +154,7 @@
         android:layout_width="35dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
+        android:layout_marginBottom="44dp"
         android:paddingLeft="7dp"
         android:paddingRight="0dp"
         android:text="B"
@@ -167,10 +173,9 @@
         android:id="@+id/textView37"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="80dp"
-        android:layout_marginTop="24dp"
+        android:layout_marginStart="90dp"
         android:text="月"
         app:layout_constraintStart_toEndOf="@+id/textView34"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="@+id/textView34" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
