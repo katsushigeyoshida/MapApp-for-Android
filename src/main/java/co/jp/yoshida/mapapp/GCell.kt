@@ -9,6 +9,7 @@ import android.graphics.Paint
 import android.graphics.PointF
 import android.graphics.Rect
 import android.graphics.RectF
+import android.util.Log
 import android.util.SizeF
 
 
@@ -20,6 +21,7 @@ enum class TEXTVERTICALALIGNMENT { TOP, CENTER, BOTTOM }
  * 地図データのセル単位での表示処理
  */
 class GCell {
+    val TAG  = "GCell"
     var mId = 0                                 //  ＩＤ
     var mGCellType = GCELLTYPE.RECT             //  セルの種類
     var mPosition = PointF(0f, 0f)          //  配置位置(左上)
@@ -44,14 +46,18 @@ class GCell {
      * 図形を描画する
      */
     fun draw(canvas: Canvas) {
-        if (mGCellType == GCELLTYPE.CIRCLE) {
-            drawCircle(canvas)
-        } else {
-            drawRect(canvas)
+        try {
+            if (mGCellType == GCELLTYPE.CIRCLE) {
+                drawCircle(canvas)
+            } else {
+                drawRect(canvas)
+            }
+            drawImage(canvas)
+            if (0 <= mTitle.length)
+                drawText(canvas)
+        } catch(e: Exception) {
+            Log.d(TAG, "draw "+e.message)
         }
-        drawImage(canvas)
-        if (0 <= mTitle.length)
-            drawText(canvas)
     }
 
     /**

@@ -87,7 +87,7 @@ GPSのトレース機能も併せ持つ。
 
 #### インストール方法
 実行ファイルのダウンロードは[mapapp-debug.apk](mapapp-debug.apk)をダウンロードする。  
-<img src="image/download.png" width="80%">
+<img src="image/download.png" width="80%">  
 (スマホでダウンロードする場合は中央の[View raw]をクリックするとダウンロードができる)  
 
 ・スマホを開発者オプションの設定にする(Android12/13)  
