@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     //  長押し時のコンテキストメニュー項目
     var mLongTouchMenu = mutableListOf<String>(
-        "マーク位置へ移動", "マーク登録", "マーク編集", "マーク参照", "マーク削除",
+        "マーク位置へ移動", "中心位置マーク登録", "マーク編集", "マーク参照", "マーク削除",
 //        "Wikiリスト検索",
         "距離測定開始"
     )
@@ -292,9 +292,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     }
 
     //  タッチ位置の前回値
-    var mPreTouchPosition = PointD(0.0, 0.0)
-    var mPreTouchDistance = 0.0
-    var mMultiTouchCenter = PointD(0.0, 0.0)
+    var mTouchDownPosition = PointD(0.0, 0.0)       //  タッチダウンの位置
+    var mPreTouchPosition = PointD(0.0, 0.0)        //  タッチ移動で前回の位置
+    var mPreTouchDistance = 0.0                             //  タッチ移動で前回からの距離
+    var mMultiTouchCenter = PointD(0.0, 0.0)        //  マルチタッチの時の中間位置
     var mZoomOn = false
     var mMoveOn = false
     //長押しのTouchEvemtの取得のための時間計測用
@@ -310,10 +311,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         var pointCount = event.pointerCount
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {    //  (0)
-                Log.d(TAG, "ACTION_DOWN "+pointCount+" "+mZoomOn+" "+mMoveOn)
                 startTime = event.eventTime     //  長押し時間測定開始
                 //  画面移動の起点
-                mPreTouchPosition = pos
+                mTouchDownPosition = pos.toCopy()
+                mPreTouchPosition = pos.toCopy()
                 mMoveOn = false
                 //  ズームの初期化
                 mPreTouchDistance = 0.0
@@ -321,15 +322,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 return true
             }
             MotionEvent.ACTION_UP -> {      //  (1)
-                Log.d(TAG, "ACTION_UP "+mZoomOn+" "+mMoveOn)
-                if (!mZoomOn && !mMoveOn) {
-                    //  長押しコンテキストメニュー
-                    endTime = event.eventTime   //  長押し終了時間
-                    if ((endTime - startTime) > 500 && pos.distance(mPreTouchPosition) < 50) {
-                        klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
-                    }
-                    return true
+                //  長押しコンテキストメニュー
+                endTime = event.eventTime   //  長押し終了時間
+                if ((endTime - startTime) > 1000 && pos.distance(mTouchDownPosition) < 50) {
+                    klib.setMenuDialog(this, "コマンド選択", mLongTouchMenu, iLongTouchMenu)
                 }
+                return true
             }
             MotionEvent.ACTION_MOVE -> {    //  (2)
                 //  距離測定
@@ -352,7 +350,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                     return true
                 } else if (!mZoomOn) {
-                    Log.d(TAG, "ACTION_MOVE move "+mZoomOn+" "+mMoveOn)
                     //  画面移動
                     mMoveOn = true
                     if (1 < mPreTouchPosition.distance(pos)) {
@@ -366,7 +363,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
             MotionEvent.ACTION_POINTER_2_DOWN -> {  //  (261)
-                Log.d(TAG, "ACTION_POINTER_2_DOWN "+pointCount+" "+mZoomOn+" "+mMoveOn)
                 if (1 < pointCount) {
                     //  マルチタッチによる拡大縮小の起点取得
                     var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
@@ -378,7 +374,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 }
             }
             MotionEvent.ACTION_POINTER_DOWN -> {  //  (5)
-                Log.d(TAG, "ACTION_POINTER_DOWN "+pointCount)
                 if (1 < pointCount) {
                     var pos1 = PointD(event.getX(0).toDouble(), event.getY(0).toDouble())
                     var pos2 = PointD(event.getX(1).toDouble(), event.getY(1).toDouble())
@@ -774,9 +769,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val n = mLongTouchMenu.indexOf(s)
         if (mLongTouchMenu[n].compareTo("マーク位置へ移動") == 0) {
             gotoMark()
-        } else if (mLongTouchMenu[n].compareTo("マーク登録") == 0) {
+        } else if (mLongTouchMenu[n].compareTo("中心位置マーク登録") == 0) {
             mSelectMark = -1        //  新規データ
-            var bp = mMapData.screen2BaseMap(mPreTouchPosition)
+            var bp = mMapData.screen2BaseMap(mMapView.getCenter())
             newMark(bp)
         } else if (mLongTouchMenu[n].compareTo("マーク編集") == 0) {
             editMark(mPreTouchPosition)
@@ -976,13 +971,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             var bp = mMapData.screen2BaseMap(mMapView.getCenter())  //  中心座標
             newMark(bp)
         } else if (s.compareTo(mMarkMenu[1]) == 0) {
-            //  位置への移動
+            //  マーク位置への移動
             gotoMark()
         } else if (s.compareTo(mMarkMenu[2]) == 0) {
-            //  編集
+            //  マーク編集
             selectEditMark()
         } else if (s.compareTo(mMarkMenu[3]) == 0) {
-            //  削除
+            //  マーク削除
             removeMark()
         } else if (s.compareTo(mMarkMenu[4]) == 0) {
             //  マーク表示切替
