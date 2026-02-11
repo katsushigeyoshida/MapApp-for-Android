@@ -43,8 +43,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
         mGpsTraceListPath = intent.getStringExtra("GPSTRACELISTPATH").toString()
 
         mGpsTraceList.mC = this
-        mGpsTraceList.mGpsTraceFileFolder = mGpsTraceFileFolder
-        mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
+        mGpsTraceList.init(mGpsTraceFileFolder, mGpsTraceListPath)
         mGpsTraceList.loadListFile()
         mListGraphview = GpsTraceListGraphView(this)
 
@@ -71,6 +70,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
         //  年の選択
         mSpYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                mGpsTraceList.loadListFile(getCurYear())
                 setSpinnerCategory(getCurYear())
                 graphView()
             }
@@ -78,6 +78,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 //                TODO("Not yet implemented")
             }
         }
+
         //  開始月の選択
         mSpMonth.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -87,6 +88,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 //                TODO("Not yet implemented")
             }
         }
+
         //  期間の選択
         mSpSpan.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -96,6 +98,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 //                TODO("Not yet implemented")
             }
         }
+
         //  集計単位の選択(回,日,週,月)
         mSpCollectUnit.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -105,6 +108,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 //                TODO("Not yet implemented")
             }
         }
+
         //  測定の種類(距離,時間,速度...)
         mSpDataType.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -114,6 +118,7 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
 //                TODO("Not yet implemented")
             }
         }
+
         //  分類の選択(散歩､ジョギング...)
         mSpCategory.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -131,7 +136,8 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
     fun setSpinnerData() {
         //  データの年をspinnerに登録
         mSpYear.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
-            mGpsTraceList.getYearList())
+            mGpsTraceList.getYearFileList())
+//            mGpsTraceList.getYearList())
         //  開始月をspinnerに登録
         var monthList = mutableListOf<String>()
         for (i in 1..12)
@@ -168,14 +174,15 @@ class GpsTraceListGraphActivity : AppCompatActivity() {
         mListGraphview.mSpanMonth   = getCurSpan()          //  期間
         mListGraphview.mCollectUnit = getCurCollectUnit()   //  集計単位
         mListGraphview.mDataType    = getCurDataType()      //  データの種別(距離、時間、速度...)
+
         //  データの取得
         val graphData = mGpsTraceList.getGraphData(getCurYear(), getCurMonth(),
             getCurSpan(), getCurCategory(), getCurCollectUnit())
-        var maxData = GraphData()           //  最大値データ
+        var maxData = GpsTraceListGraphData()           //  最大値データ
         //  グラフデータへの変換と最大値の取得
-        mListGraphview.mGraphData.clear()
+        mListGraphview.mGpsTraceListGraphData.clear()
         for (data in graphData.values) {
-            mListGraphview.mGraphData.add(data)
+            mListGraphview.mGpsTraceListGraphData.add(data)
             if (maxData.dataCount == 0)
                 maxData.setData(data)
             else

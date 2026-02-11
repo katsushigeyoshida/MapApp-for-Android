@@ -31,8 +31,8 @@ class GpsTraceListGraphView(context: Context): View(context) {
     var mSpanMonth = 12                         //  表示期間
     var mDataType: String = ""                  //  データの種類(距離,時間...)
     var mCollectUnit = CollectUnit.Time         //  集計単位
-    var mGraphData = mutableListOf<GraphData>(GraphData())  //  表示データ
-    var mYearData = GraphData()                 //  年間の累積データ
+    var mGpsTraceListGraphData = mutableListOf<GpsTraceListGraphData>(GpsTraceListGraphData())  //  表示データ
+    var mYearData = GpsTraceListGraphData()                 //  年間の累積データ
 
     var mTotalDistance = 0f                     //  年間合計距離
     var mTotalLap = 0f                          //  年間合計時間
@@ -103,7 +103,7 @@ class GpsTraceListGraphView(context: Context): View(context) {
         val xOffset = (mWorldRight - mWorldLeft) * 0.02
         val yOffset = (mWorldBottom - mWorldTop) * 0.003
         //  データの描画
-        for (data in mGraphData) {
+        for (data in mGpsTraceListGraphData) {
             val year = klib.date2Year(data.dateTime)
             val weekOffset = klib.date2DayOfWeek(klib.setDate(year, 1, 1)) - 1
             val day = when (collectUnit) {
@@ -210,7 +210,7 @@ class GpsTraceListGraphView(context: Context): View(context) {
      * グラフエリアの設定
      * year: 対象年, startMonth: 開始月, spanMonth: 期間(月), dataType: データ種別, maxData: 最大値データ
      */
-    fun setGraphArea(year: Int, startMonth: Int, spanMonth: Int, dataType:String, maxData: GraphData) {
+    fun setGraphArea(year: Int, startMonth: Int, spanMonth: Int, dataType:String, maxData: GpsTraceListGraphData) {
         mYear = year
         mStartMonth = startMonth
         mSpanMonth  = spanMonth

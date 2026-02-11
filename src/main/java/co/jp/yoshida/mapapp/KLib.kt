@@ -19,6 +19,7 @@ import android.media.AudioManager
 import android.media.ExifInterface
 import android.media.ToneGenerator
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.preference.PreferenceManager
 import android.util.Log
@@ -1517,6 +1518,13 @@ class KLib {
     }
 
     /**
+     * パス同士を結合する
+     */
+    fun combinedPath(path1:String, path2:String): String {
+        return path1.trimEnd('/') + "/" + path2.trimStart('/')
+    }
+
+    /**
      * 内部メモリのディレクトリの取得
      * @return          ディレクトリ
      */
@@ -1658,7 +1666,7 @@ class KLib {
      * return   ファイルリスト(File形式)
      */
     fun getFileList(path: String, subdir: Boolean = true, filter: String = ""): List<File> {
-        val fileList = mutableListOf<File>()
+        var fileList = mutableListOf<File>()
         val dir = File(path)
         val files = dir.listFiles()
         if (null != files) {
@@ -2760,6 +2768,25 @@ class KLib {
         val editor = prefs.edit()
         editor.putFloat(key, value)
         editor.commit()
+    }
+
+    /**
+     * pixelからdpへの変換
+     * @param px
+     * @param context
+     * @return float dp
+     */
+    fun convertPx2Dp(px: Int, context: Context): Float {
+        val metrics = context.getResources().getDisplayMetrics()
+        return px / metrics.density
+    }
+
+    /**
+     * OSのバージョン取得
+     * return : (e.g., "14", "13", "12")
+     */
+    fun getOSVersion(): String {
+        return Build.VERSION.RELEASE
     }
 
 }

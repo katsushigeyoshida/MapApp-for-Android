@@ -54,25 +54,27 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     val mImageFileSet = mutableSetOf<String>()      //  ダウンロードしたファイルリスト(Web上に存在しないファイルも登録)
     val mAreaDataListPath = "AreaDataList.csv"      //  画面登録リスト保存ファイル名
     val mMarkListPath = "MarkList.csv"              //  マークリスト保存ファイル名
-    val mGpxDataListPath = "GpxDataList.csv"        //  GPXデータリストのファイル名
+//    val mGpxDataListPath = "GpxDataList.csv"        //  GPXデータリストのファイル名
     var mGpsTraceFileFolder = "GpsTraceData"        //  GPSトレースデータの保存フォルダ名
     var mGpsTraceListPath = "GpsTraceList.csv"      //  GPSトレースリストのファイル名
     var mSelectMark = -1                            //  選択マークデータMo
     var mElevatorDataNo = 0                         //  標高データの種類(0: dem5a,1: dem5b,
 
-    val MENU00 = 0
-    val MENU01 = 1
-    val MENU02 = 2
-    val MENU03 = 3
-    val MENU04 = 4
-    val MENU05 = 5
-    val MENU06 = 6
-    val MENU07 = 7
-    val MENU08 = 8
-    val MENU09 = 9
-    val MENU10 = 10
-    val MENU11 = 11
-    val MENU12 = 12
+    //  オプションメニューアイテム
+    val MENU00 = 0      //  地図情報
+    val MENU01 = 1      //  登録画面
+    val MENU02 = 2      //  地図データ編集
+    val MENU03 = 3      //
+    val MENU04 = 4      //  GPSトレースリスト
+    val MENU05 = 5      //  写真の位置
+    val MENU06 = 6      //  マーク操作
+    val MENU07 = 7      //  Wikiリスト
+    val MENU08 = 8      //  地図データ一括取り込み
+    val MENU09 = 9      //  オンライン切り替え
+    val MENU10 = 10     //  アプリデータ情報
+    val MENU11 = 11     //  ストレージパーミッション
+    val MENU12 = 12     //  アプリケーションパーミッション
+    val MENU13 = 13     //  地図の切り替え
 
     //  オプションサブメニュー(画面登録)
     val mMapDispMenu = listOf(
@@ -116,9 +118,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var mMarkList = MarkList()                      //  マークリストクラス
     var mMeasure = Measure()                        //  距離測定クラス
     //    var mGpxDataList = GpsDataList()                //  GPXデータリスト
-    var mGpsTraceList = GpsTraceList()              //  GPSトレースリスト
+//    var mGpsTraceList = GpsTraceList()              //  GPSトレースリスト
     var mGpsTrace = GpsTrace()                      //  GpsのLogをとる
-
+    var mGpsTraceCurYear = 2026                     //  Gpsトレースの対象年
     val handler = Handler(Looper.getMainLooper())   //  Handlerw@でUIを制御
     val mGpsInterval = 5000L                        //  GPSトレース表示のインターバル(ms)
     var mDataFolder = ""                            //  データ保存ディレクトリ
@@ -171,17 +173,19 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
         mAppTitle = getString(R.string.app_name)
+        mGpsTraceCurYear = klib.getNowDate("yyyy").toInt()      //  GPSトレースデータの対象年
 
         initContent()
-        init()
+        initDataFolder()
+        initMap()
 
         //  地図データの初期化
         mMapView = MapView(this, mMapData)
-        mMapView.mMarkList = mMarkList          //  マークリストデータの設定
-        mMapView.mMeasure = mMeasure            //  距離測定データの設定
-        mMapView.mGpsTraceList = mGpsTraceList  //  GPSトレースの表示設定
-        mMapData.mDataFolder = mDataFolder      //  データファイルフォルダ設定
-        mMapData.loadParameter()                //  パラメータの読み込み
+        mMapView.mMarkList = mMarkList              //  マークリストデータの設定
+        mMapView.mMeasure = mMeasure                //  距離測定データの設定
+//        mMapView.mGpsTraceList = mGpsTraceList     //  GPSトレースの表示設定
+        mMapData.mDataFolder = mDataFolder          //  データファイルフォルダ設定
+        mMapData.loadParameter()                    //  パラメータの読み込み
         setParameter()
         setViewParameter()
         mapInit()
@@ -221,11 +225,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      */
     override fun onResume() {
         super.onResume()
+        Log.d(TAG,"onResume ")
         //  GPSトレースデータ
-        mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
-        mGpsTraceList.mGpsTraceFileFolder = mGpsTraceFileFolder
-        mGpsTraceList.loadListFile()
-        klib.setStrPreferences(mGpsTraceListPath, "GpsTraceListPath", this)
+            mMapView.mGpsTraceList.init(mGpsTraceFileFolder, mGpsTraceListPath)
+        mMapView.mGpsTraceList.loadListFile(mGpsTraceCurYear)
+        klib.setStrPreferences( mGpsTraceListPath, "GpsTraceListPath", this)
         //  GPSサービスが起動しているときは、GPSトレース表示のハンドラを開始
         if (klib.isServiceRunning(this, GpsService::class.java))
             handler.post(GpsTraceRunnable)
@@ -411,6 +415,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         item9.setIcon(android.R.drawable.ic_menu_set_as)
         val item2 = menu.add(Menu.NONE, MENU02, Menu.NONE, "地図データ編集")
         item2.setIcon(android.R.drawable.ic_menu_set_as)
+        val item13 = menu.add(Menu.NONE, MENU13, Menu.NONE, "地図の切替")
+        item13.setIcon(android.R.drawable.ic_menu_set_as)
         val item10 = menu.add(Menu.NONE, MENU10, Menu.NONE, "アプリデータ情報")
         item10.setIcon(android.R.drawable.ic_menu_set_as)
         val item11 = menu.add(Menu.NONE, MENU11, Menu.NONE, "ストレージパーミッション")
@@ -481,31 +487,43 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             MENU12 -> {       //  アプリケーション・パーミッション
                 goApplicatioPermission()
             }
+            MENU13 -> {         //  地図の切り替え
+                setMapInfoData()
+            }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * データフォルダパスの設定
+     */
+    fun initDataFolder() {
+        //  データフォルダの設定
+        val baseFolder = klib.getDCIMDirectory()
+        chkManageAllFilesAccess(baseFolder)     //  ファイルアクセスのパーミッションチェック
+
+        //  地図画像データ保存先フォルダ
+        mBaseFolder = baseFolder + "/gsiMap/"
+        if (!klib.mkdir(mBaseFolder))
+            Toast.makeText(this, "フォルダ作成不可:" + mBaseFolder, Toast.LENGTH_LONG).show()
+        mMapData.mBaseFolder = mBaseFolder
+
+        //  地図データ以外のデータフォルダ
+        mDataFolder = klib.getDCIMPackageName(this) + "/"
+        if (!klib.mkdir(mDataFolder))
+            Toast.makeText(this, "フォルダ作成不可:" + mDataFolder, Toast.LENGTH_LONG).show()
+        mMapInfoDataPath  = mDataFolder + mMapInfoDataPath
+
+        mGpsTraceListPath = mDataFolder + mGpsTraceListPath
     }
 
     /**
      * データフォルダパスの設定、地図データリストの読込,MapViewサイズ仮設定
      * spinner,buttonの処理
      */
-    fun init() {
+    fun initMap() {
         //  画面の向きを固定
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        //  wデータフォルダの設定
-        val baseFolder = klib.getDCIMDirectory()
-        chkManageAllFilesAccess(baseFolder)     //  ファイルアクセスのパーミッションチェック
-        //  地図画像データ保存先フォルダ
-        mBaseFolder = baseFolder + "/gsiMap/"
-        if (!klib.mkdir(mBaseFolder))
-            Toast.makeText(this, "フォルダ作成不可:" + mBaseFolder, Toast.LENGTH_LONG).show()
-        //  地図データ以外のデータフォルダ
-        mDataFolder = klib.getDCIMPackageName(this) + "/"
-        if (!klib.mkdir(mDataFolder))
-            Toast.makeText(this, "フォルダ作成不可:" + mDataFolder, Toast.LENGTH_LONG).show()
-        mMapInfoDataPath  = mDataFolder + mMapInfoDataPath
-        mGpsTraceListPath = mDataFolder + mGpsTraceListPath
-        mMapData.mBaseFolder = mBaseFolder
 
         //  地図データリストの読込
         mMapInfoData.loadMapInfoData(mMapInfoDataPath)
@@ -697,28 +715,48 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             //  ダイヤログ確認あり
             if (!mGpsLocation) {
                 //  GPSトレース開始
-                AlertDialog.Builder(this)
-                    .setTitle("開始確認")
-                    .setMessage("GPSトレースを記録します")
-                    .setPositiveButton("開始", {
-                            dialog, which ->
-                        //  GPS ON
-                        btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-                        mGpsTrace.start()
-                        GpsServiceStart()
-                        mGpsLocation = true
-                    })
-                    .setNegativeButton("キャンセル", {
-                            dialog, which ->
-                    })
-//                    .setNeutralButton("継続", {
-//                            dialog, which ->
-//                        //  GPS ON
-//                        btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-//                        mGpsTrace.start(true)
-//                        GpsServiceStart(true)
-//                    })
-                    .show()
+                if (!mGpsTrace.existsGpxFile()) {
+                    //  GPSトレースファイルなし
+                    AlertDialog.Builder(this)
+                        .setTitle("開始確認")
+                        .setMessage("GPSトレースを記録します")
+                        .setPositiveButton("開始", {
+                                dialog, which ->
+                            //  GPS ON
+                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                            mGpsTrace.start()
+                            GpsServiceStart()
+                            mGpsLocation = true
+                        })
+                        .setNegativeButton("キャンセル", {
+                                dialog, which ->
+                        })
+                        .show()
+                } else {
+                    //  GPSトレースファイルが残っている
+                    AlertDialog.Builder(this)
+                        .setTitle("開始確認")
+                        .setMessage("GPSトレースを記録します")
+                        .setPositiveButton("開始", {
+                                dialog, which ->
+                            //  GPS ON
+                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                            mGpsTrace.start()
+                            GpsServiceStart()
+                            mGpsLocation = true
+                        })
+                        .setNegativeButton("キャンセル", {
+                                dialog, which ->
+                        })
+                        .setNeutralButton("継続", {
+                                dialog, which ->
+                            //  GPS ON
+                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                            mGpsTrace.start(true)
+                            GpsServiceStart(true)
+                        })
+                        .show()
+                }
             } else {
                 //  GPSトレース終了
                 AlertDialog.Builder(this)
@@ -1147,7 +1185,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * ファイル一覧第ログを表示して行う
      */
     fun markImport() {
-//        klib.fileSelectDialog(this, klib.getPackageNameDirectory(this), "*.csv", true, iFilePath)
         klib.fileSelectDialog(this, mDataFolder, "*.csv", true, iFilePath)
     }
 
@@ -1566,6 +1603,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     /**
      * アプリ情報の表示
+     * 地図データのファイル数とサイズ合計を非同期で取得
      */
     fun getAplDataInf() {
         //  地図ファイルデータの数とサイズを取得
@@ -1578,8 +1616,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         mes += "地図データファイル数: " + "%,d".format(fileList.count()) + "\n"
         mes += "ファイルサイズ合計　: " + "%,d".format(filesSize)
         klib.setStrPreferences(mes, "ApplicationDataInfo", this)
-//        klib.messageDialog(this, "アプリ情報", mes)
     }
+
+    /**
+     * 地図データの選択表示切り替え
+     */
+    fun setMapInfoData() {
+        var mapTitle = mutableListOf<String>()
+        for (i in mMapInfoData.mMapData.indices)
+            mapTitle.add(mMapInfoData.mMapData[i][0])
+        klib.setMenuDialog(this, "地図の切替", mapTitle, iMapChange)
+    }
+
+    /**
+     * 地図データの選択表示切り替え関数インターフェース)
+     */
+    var iMapChange = Consumer<String> { s ->
+        val n = mMapInfoData.mMapData.indexOfFirst { it -> it[0].compareTo(s) == 0 }
+        if (0 <= n) {
+            mMapData.mMapTitleNum = n
+            mapInit()
+            mapDisp(mMapDataDownLoadMode)
+        }
+    }
+
 
     /**
      * コンテンツ(コントロール)の初期化
@@ -1684,8 +1744,11 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      */
     private val gpsTraceListActivityLuncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()) { result ->
+        val year = result.data?.getIntExtra("年", klib.getNowDate("yyyy").toInt())
+        if (year != null && 0 < year)
+            mGpsTraceCurYear = year
+        mMapView.mGpsTraceList.loadListFile(mGpsTraceCurYear)
         if (result.resultCode == RESULT_OK) {
-            mGpsTraceList.loadListFile()
             //  座標指定移動
             val coordinate = result.data?.getStringExtra("座標")
             if (coordinate != null && 0 < coordinate.length) {

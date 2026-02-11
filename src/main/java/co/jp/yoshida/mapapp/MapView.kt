@@ -42,6 +42,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     var mInfoTextSize = 32.0                //  画面左上の情報表示文字サイズ
     var mDispDateTime = mutableListOf<LocalDateTime>()
     var mDateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss")
+    var mDispCommentOffset = 0f             //  OSversionによって座標などのコメント位置を補正)
 
     var klib = KLib()
     val kdraw = KDraw()
@@ -49,6 +50,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     init {
         mCellSize = (mWidth / mColCount).toInt()
         setCellBoard()
+        mDispCommentOffset = if (klib.getOSVersion().toInt() < 14) 50f else 0f
     }
 
     //  描画処理
@@ -63,9 +65,9 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         mMarkList.draw(canvas, mMapData)
         //  測定線の表示
         mMeasure.draw(canvas, mMapData)
-        //  GPSトレースの表示
+        //  トレース中のGPSデータの表示
         mGpsTrace.draw(canvas, mMapData)
-        //  GPSトレースリスト表示
+        //  GPSトレースリスト内のトレースデータ表示
         mGpsTraceList.draw(canvas, mMapData)
         //  中心線
         drawCross()
@@ -87,7 +89,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
     fun drawCoordinates(mapData: MapData) {
         //  表示位置
         var x = 10f
-        var y = 40f
+        var y = 40f + mDispCommentOffset
         //  中心座標と標高
         var bp = mapData.screen2BaseMap(getCenter())
         var cp = mapData.baseMap2Coordinates(bp)
@@ -203,7 +205,6 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         if (mWidth <= 0 || mHeight <= 0 || mColCount == 0 || mRowCount == 0)
             return
         setCelSize()
-        Log.d(TAG, "setCellBoard:Zoom "+mColCount+" "+mCellSize)
         mGCells.clear()
         var sx = 0f
         var width = 0f
@@ -278,7 +279,6 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         var id = getId(col, row)
         for (cell in mGCells) {
             if (cell.mId == id) {
-                Log.d(TAG,"getCellImage: PixelId "+id)
                 return cell.getBitmapImage()
             }
         }

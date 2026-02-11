@@ -123,6 +123,13 @@ class GpsTrace {
     }
 
     /**
+     * GPS記録ファイルの存在確認
+     */
+    fun existsGpxFile(path: String = mGpsPath): Boolean {
+        return klib.existsFile(path)
+    }
+
+    /**
      * GPS記録ファイルに日時ファイル名を付けて指定フォルダに移動
      */
     fun moveGpsFile(moveFolder: String, orgPath: String = mGpsPath) {

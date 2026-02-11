@@ -11,10 +11,12 @@ import android.widget.ListView
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.util.Consumer
 import androidx.core.view.size
 import co.jp.yoshida.mapapp.databinding.ActivityGpsTraceListBinding
+import kotlin.text.split
 
 /**
  * GPSトレースデータ(CSVファイル)の管理
@@ -46,7 +48,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     )
 
     val mUpdateMenu = listOf<String>(
-        "再表示", "リストファイルの更新", "データファイル確認", "初期化(データファイル再読込み)", "リストファイルバックアップ"
+        "再表示", "リストファイルの更新", "データファイルのない項目削除", "初期化(データファイル再読込み)",   // "リストファイルバックアップ"
     )
     val mRemoveMenu = listOf<String>(           //  非選択メニュー
         "表示分ゴミ箱", "全ゴミ箱解除", "ゴミ箱から削除"
@@ -76,7 +78,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     var mGpsTraceFileFolder = ""                    //  GPXファイルリストパス
     var mGpsTraceListPath = ""
     var mSpinnerEnabled = true                      //  Spinner の有効可否
-    var mListTitleType = 0                          //  表示リストの形式
+    var mListTitleType = 0                          //  表示リストの形式(0:標準タイトル1:データパスタイトル)
 
     val klib = KLib()
 
@@ -90,12 +92,10 @@ class GpsTraceListActivity : AppCompatActivity() {
         mGpsTraceListPath = intent.getStringExtra("GPSTRACELISTPATH").toString()
 
         mGpsTraceList.mC = this
-        mGpsTraceList.mGpsTraceFileFolder = mGpsTraceFileFolder
-        mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
+        mGpsTraceList.init(mGpsTraceFileFolder, mGpsTraceListPath)
         mGpsTraceList.loadListFile()
         mGpsTraceList.getFileData(20)
         if (0 < mGpsTraceList.mErrorMessage.length) {
-            Log.d(TAG,"onCreate "+ mGpsTraceList.mErrorMessage)
             klib.messageDialog(this, "エラー", mGpsTraceList.mErrorMessage)
             mGpsTraceList.mErrorMessage = ""
         }
@@ -106,20 +106,22 @@ class GpsTraceListActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         mGpsTraceList.saveListFile()
+        val intent = Intent()
+        intent.putExtra("年", mGpsTraceList.getListFileCurYear().toInt())
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent? ) {
         super.onActivityResult(requestCode, resultCode, data)
         when (requestCode) {
-            REQUESTCODE_CSVEDIT -> {
-                if (resultCode == RESULT_OK) {
-                    mGpsTraceList.loadListFile()
-                    pushSelectItem()
-                    setSpinnerData()
-                    setDataList()
-                    popSelectItem(0)
-                }
-            }
+//            REQUESTCODE_CSVEDIT -> {
+//                if (resultCode == RESULT_OK) {
+//                    mGpsTraceList.loadListFile()
+//                    pushSelectItem()
+//                    setSpinnerData()
+//                    setDataList()
+//                    popSelectItem(0)
+//                }
+//            }
         }
     }
 
@@ -150,11 +152,18 @@ class GpsTraceListActivity : AppCompatActivity() {
         spYear.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onItemSelected(
                 parent: AdapterView<*>?, view: View?, position: Int, id: Long ) {
+                var year = getCurYear()
+                if (year < 1900)
+                    year = klib.getNowDate("yyyy").toInt()
+                mGpsTraceList.clearVisible()
+                mGpsTraceList.saveListFile()
+                mGpsTraceList.loadListFile(year)
+
                 if (mSpinnerEnabled) {
                     pushSelectItem()
-                    setSpinnerMonth(getCurYear())
-                    setSpinnerGroup(getCurYear())
-                    setSpinnerCategory(getCurYear())
+                    setSpinnerMonth(year)
+                    setSpinnerGroup(year)
+                    setSpinnerCategory(year)
                     setDataList()
                     popSelectItem(1)
                 } else
@@ -550,7 +559,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         klib.setMenuDialog(this, "操作メニュー", mItemClickMenu, iItemClickOperation)
     }
 
-    //  項目クリック処理
+    //  項目クリック処理のインターフェース関数
     var iItemClickOperation = Consumer<String> { s ->
         val n = mSelectListPosition
         if (0 <= n) {
@@ -602,7 +611,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         klib.folderSelectDialog(this, mGpsTraceFileFolder, iGpsExportOperation)
     }
 
-    //  指定のフォルダーにGPXファイルを出力
+    //  指定のフォルダーにGPXファイルを出力インターフェース関数
     var iGpsExportOperation = Consumer<String> { s ->
         if (0 <= mSelectListPosition) {
             var gpsTraceList = mutableListOf<GpsTraceData>()
@@ -619,8 +628,23 @@ class GpsTraceListActivity : AppCompatActivity() {
     fun goGpsCsvEdit(gpsTraceFilePath: String) {
         val intent = Intent(this, GpxEditActivity::class.java)
         intent.putExtra("GPSTRACELISTPATH", mGpsTraceListPath)
+        intent.putExtra("GPSTRACELISTCURPATH", mGpsTraceList.mGpsTraceListCurPath)
         intent.putExtra("GPSTRACEFILEPATH", gpsTraceFilePath)
-        startActivityForResult(intent, REQUESTCODE_CSVEDIT)
+        gpsCsvEditActivityLuncher.launch(intent)
+    }
+
+    /**
+     * goGpsCsvEditの実行終了後の処理
+     */
+    private val gpsCsvEditActivityLuncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            mGpsTraceList.mDataList = mGpsTraceList.loadListFile(mGpsTraceList.mGpsTraceListCurPath)
+            pushSelectItem()
+            setSpinnerData()
+            setDataList()
+            popSelectItem(0)
+        }
     }
 
     /**
@@ -637,6 +661,9 @@ class GpsTraceListActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * GPSトレースリストのグラフ表示
+     */
     fun goGpsTraceListGraph() {
         val intent = Intent(this, GpsTraceListGraphActivity::class.java)
         intent.putExtra("GPSTRACEFOLDER", mGpsTraceFileFolder)
@@ -649,10 +676,10 @@ class GpsTraceListActivity : AppCompatActivity() {
      * coordinate       位置座標文字列
      */
     fun mapMove(coordinate: String) {
-//        Toast.makeText(this, "mapMove "+coordinate, Toast.LENGTH_LONG).show()
         if (0 < coordinate.length) {
             if (0 < coordinate.length) {
                 val intent = Intent()
+                intent.putExtra("年", mGpsTraceList.getListFileCurYear().toInt())
                 intent.putExtra("座標", coordinate)
                 setResult(RESULT_OK, intent)
                 finish()
@@ -720,7 +747,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     fun setSpinnerData(){
         //  データの年をspinnerに登録
         spYear.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
-            mGpsTraceList.getYearList(mGpsTraceList.mAllListName))
+            mGpsTraceList.getYearFileList())
         //  データの月をspinnerに登録
         setSpinnerMonth(getCurYear())
         //  グループをspinnerに登録
@@ -758,8 +785,8 @@ class GpsTraceListActivity : AppCompatActivity() {
         }
 
         //  選択値を元に戻す
-        val yearPos     = if (firstYearPos && 1 < spYear.adapter.count) 1
-                            else mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(year)
+        val yearPos     = if (firstYearPos && 0 < spYear.adapter.count) 0
+                            else mGpsTraceList.getYearFileList().indexOf(year)
         val monthPos    = mGpsTraceList.getMonthList(getCurYear(), mGpsTraceList.mAllListName).indexOf(month)
         val groupPos    = mGpsTraceList.getGroupList(getCurYear(), mGpsTraceList.mAllListName).indexOf(group)
         val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(category)
@@ -827,7 +854,7 @@ class GpsTraceListActivity : AppCompatActivity() {
      *   level 0:すべて 1:年をのぞく 2:年と月を除く3:年、月、グループを除く 3: すべてを除く
      */
     fun popSelectItem(level: Int = 1) {
-        val yearPos     = mGpsTraceList.getYearList(mGpsTraceList.mAllListName).indexOf(mYearSelectItem)
+        val yearPos     = mGpsTraceList.getYearFileList().indexOf(mYearSelectItem)
         val monthPos    = mGpsTraceList.getMonthList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mMonthSelectItem)
         val groupPos    = mGpsTraceList.getGroupList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mGroupSelectItem)
         val categoryPos = mGpsTraceList.getCategoryList(getCurYear(), mGpsTraceList.mAllListName).indexOf(mCategorySelectItem)

@@ -6,3 +6,41 @@ Xperia10(Android15)での問題 (2026/01)
 ・初回起動時の地図位置を世界全体から日本の位置に変更(zoom=6,xpos=56,ypos=23)
 ・地図上で長押しが有効にならない(?)
 ・画像のダウンロード時に操作ができなくなる
+
+リファレンス
+    0023: * ====  GPSのトレースデータ(ファイル)を一覧管理  ====
+    0025: class GpsTraceList
+    0067: fun gpxExport(dataList: List<GpsTraceData>, exportFolder: String)
+    0097: fun getFileData(maxCount: Int = 0)                        再帰的にファイルを検索してリストにないデータを追加する
+    0123: fun getYearList(firstItem:String = ""): List<String>                  年リストの取得
+    0140: fun getMonthList(year: Int, firstItem:String = ""): List<String>      月リストの取得
+    0160: fun getCategoryList(year: Int, firstItem:String = ""): List<String>   分類リストの取得
+    0177: fun getGroupList(year: Int, firstTitle: String = ""): List<String>    グループリストの取得
+    0193: fun clearVisible()                                        全データの表示フラグをクリア(非表示)にする
+    0202: fun setAllVisible()                                       全データの表示フラグを表示にする
+    0211: fun reverseVisible()                                      表示フラグを反転する
+    0221: fun setVisible(selectList: List<Int>)                     リストデータから表示フラグを設定
+    0231: fun setTrashData(n: Int)                                  指定項目を[ゴミ箱]に設定
+    0240: fun setTrashData(selectList: List<Int>)                   リストデータからグループを[ゴミ箱]に設定
+    0249: fun setUnTrashData(selectList: List<Int>)                 リストデータからグループのゴミ箱を解除(要グループ再設定)
+    0258: fun setAllUnTrashData()                                   すべてのデータのゴミ箱を解除
+    0269: fun setGroupData(selectList: List<Int>, group: String)    リストデータからグループを設定
+    0278: fun removeDataFile(selectList: List<GpsTraceData>)        リストデータからデータファイルを含めて削除(gpxファイルは除く)
+    0291: fun removeTrashDataFile(selectList: List<GpsTraceData>)   リストデータからゴミ箱のデータをファイルを含めて削除(gpxファイルは除く)
+    0306: fun gpxFilesMove(dataList: List<Int>, moveFolder: String) データファイルの移動
+    0322: fun draw(canvas: Canvas, mapData: MapData)                GPSトレースの表示
+    0345: fun getListTitleData(year: String, month: String, category: String, group: String, titleType: Int = 0, pathOffset: Int = 0): List<String>  リストビューに表示するタイトルリストをつくる
+    0391: fun setDataListSortType(sortType: DATALISTSORTTYPE)       ソートタイプの設定をおこなう
+    0404: fun reloadDataFiles(dispList: List<Int>): Int             対象選択項目のデータをデータファイルから更新する
+    0419: fun reloadDataFile(dispNo: Int): Boolean                  対象項目のデータをデータファイルから更新する
+    0441: fun existDataFileAll(): Int                               データファイルの存在の有無を確認しなければリストから削除
+    0456: fun findGpsFile(gpsFilePath: String): Int                 データファイル名からデータ位置を求める
+    0468: fun appendDataFile(addDataNoList: List<Int>)              データファイルを結合する
+    0497: fun loadListFile(exist: Boolean = false)                  リストデータを取得する
+    0527: fun saveListFile()                                        リストデータを保存
+    0534: fun saveListFile(path: String)                            リストデータをファイルに保存
+    0553: fun cnvYearDataFile()                                     GPSトレースリストファイルを年別のトレースリストファイルに変換する
+    0585: fun makeDataFilePath(year: String): String                年別のリストファイルパスの作成
+    0595: fun backupListFile()                                      バックアップフォルダにリストデータを日付を付けてファイル保存する
+    0614: fun getGraphData(year: Int, startMonth:Int, span:Int, category:String, collectUnit: CollectUnit): Map<Int, GpsTraceListGraphData>  GPSリストデータを対象年と分類でフィルタリングしてからグラフ用データに変換
+    0642: fun getYearData(year: Int, startMonth:Int, span:Int, category: String): GpsTraceListGraphData   集計データの取得

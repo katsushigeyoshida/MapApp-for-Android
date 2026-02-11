@@ -42,12 +42,14 @@ class GpxEditActivity : AppCompatActivity() {
     lateinit var spThickness: Spinner
     lateinit var spCategory: Spinner
 
-    var mGpxDataListPath = ""                           //  GPXファイルリストパス
+    var mGpsTraceListPath = ""                           //  GPXファイルリストパス
+    var mGpsTraceListCurPath = ""
     var mGpxFilePath = ""                               //  GPXファイルパス
     var mGpxFilePos = -1                                //  選択されたGPXファイル位置
     var mNewFile = false                                //  新規登録
 
     var mGpsTraceList = GpsTraceList()                   //  GPXファイルリスト
+
     val klib = KLib()
 
 
@@ -58,8 +60,8 @@ class GpxEditActivity : AppCompatActivity() {
 
         this.title = "GPSファイル登録"
 
-        mGpxDataListPath = klib.getStrPreferences("GpsTraceListPath", this).toString()
-        mGpsTraceList.mGpsTraceListPath = mGpxDataListPath
+        mGpsTraceListPath = klib.getStrPreferences("GpsTraceListPath", this).toString()
+        mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
         mGpsTraceList.loadListFile()
 
         val intent = getIntent()
@@ -81,10 +83,14 @@ class GpxEditActivity : AppCompatActivity() {
             }
         } else {
             //  内部からの呼び出し
-            mGpxDataListPath = intent.getStringExtra("GPSTRACELISTPATH").toString()
+            mGpsTraceListPath = intent.getStringExtra("GPSTRACELISTPATH").toString()
+            mGpsTraceListCurPath = intent.getStringExtra("GPSTRACELISTCURPATH").toString()
             mGpxFilePath = intent.getStringExtra("GPSTRACEFILEPATH").toString()
             if (mGpxFilePath.length == 0 && !klib.existsFile(mGpxFilePath))
                 mNewFile = true
+            else
+                mGpsTraceList.mDataList = mGpsTraceList.loadListFile(mGpsTraceListCurPath)
+            Log.d(TAG,"onCreate "+mGpsTraceList.mDataList.count()+" "+mGpsTraceListCurPath+" "+mGpxFilePath)
         }
 
         initControl()
@@ -194,7 +200,7 @@ class GpxEditActivity : AppCompatActivity() {
                     mGpsTraceList.mDataList.add(gpsFileData)
                 }
                 mGpsTraceList.saveListFile()
-
+                Log.d(TAG,"btOK.setOnClickListener "+mGpsTraceList.mDataList.count())
                 setResult(RESULT_OK)
                 finish()
             }
