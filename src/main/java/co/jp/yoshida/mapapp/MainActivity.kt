@@ -177,7 +177,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         initContent()
         initDataFolder()
-        initMap()
+        initMapControl()
 
         //  地図データの初期化
         mMapView = MapView(this, mMapData)
@@ -225,9 +225,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      */
     override fun onResume() {
         super.onResume()
-        Log.d(TAG,"onResume ")
         //  GPSトレースデータ
-            mMapView.mGpsTraceList.init(mGpsTraceFileFolder, mGpsTraceListPath)
+        mMapView.mGpsTraceList.init(mGpsTraceFileFolder, mGpsTraceListPath)
         mMapView.mGpsTraceList.loadListFile(mGpsTraceCurYear)
         klib.setStrPreferences( mGpsTraceListPath, "GpsTraceListPath", this)
         //  GPSサービスが起動しているときは、GPSトレース表示のハンドラを開始
@@ -521,7 +520,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * データフォルダパスの設定、地図データリストの読込,MapViewサイズ仮設定
      * spinner,buttonの処理
      */
-    fun initMap() {
+    fun initMapControl() {
         //  画面の向きを固定
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
 
@@ -648,6 +647,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             setGpsButton()
         }
 
+        //  GPSデータ
+        btGpsOn.setOnLongClickListener {
+            setGpsLongButton()
+            true
+        }
+
         //  マーク表示切替
         btMark.setOnClickListener {
             mMarkList.mMarkDisp = !mMarkList.mMarkDisp
@@ -708,95 +713,159 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     /**
      * GPSの状態をボタンに設定する
-     * cont         継続フラグ (true:継続　false:新規設定 null:ダイヤログ確認)
+     * cont         継続フラグ (true:継続(service実行中)　false:新規設定 null:ダイヤログ確認)
      */
     fun setGpsButton(cont: Boolean? = null) {
+        var gpsCont = mGpsTrace.getGpsTraceContinue()
         if (cont == null) {
             //  ダイヤログ確認あり
             if (!mGpsLocation) {
-                //  GPSトレース開始
-                if (!mGpsTrace.existsGpxFile()) {
-                    //  GPSトレースファイルなし
-                    AlertDialog.Builder(this)
-                        .setTitle("開始確認")
-                        .setMessage("GPSトレースを記録します")
-                        .setPositiveButton("開始", {
-                                dialog, which ->
-                            //  GPS ON
-                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-                            mGpsTrace.start()
-                            GpsServiceStart()
-                            mGpsLocation = true
-                        })
-                        .setNegativeButton("キャンセル", {
-                                dialog, which ->
-                        })
-                        .show()
+                if (!gpsCont) {
+                    //  GPSトレース開始
+                    startButton()
                 } else {
-                    //  GPSトレースファイルが残っている
-                    AlertDialog.Builder(this)
-                        .setTitle("開始確認")
-                        .setMessage("GPSトレースを記録します")
-                        .setPositiveButton("開始", {
-                                dialog, which ->
-                            //  GPS ON
-                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-                            mGpsTrace.start()
-                            GpsServiceStart()
-                            mGpsLocation = true
-                        })
-                        .setNegativeButton("キャンセル", {
-                                dialog, which ->
-                        })
-                        .setNeutralButton("継続", {
-                                dialog, which ->
-                            //  GPS ON
-                            btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
-                            mGpsTrace.start(true)
-                            GpsServiceStart(true)
-                        })
-                        .show()
+                    //  GPSトレース開始/継続
+                    startContButton()
                 }
             } else {
                 //  GPSトレース終了
-                AlertDialog.Builder(this)
-                    .setTitle("終了確認")
-                    .setMessage("GPSトレースを保存しますか?")
-                    .setPositiveButton("保存なし終了",{
-                            dialog, which ->
-                        //  GPSデータを保存せずに終了
-                        btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
-                        mGpsTrace.end()
-                        GpsServiceEnd(false)
-                        mGpsLocation = false
-                    })
-                    .setNeutralButton("保存終了", {
-                            dialog, which ->
-                        //  GPS OFF
-                        btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
-                        mGpsTrace.end()
-                        GpsServiceEnd()
-                        mGpsLocation = false
-                    })
-                    .setNegativeButton("キャンセル", {
-                            dialog, which ->
-                    })
-                    .show()
+                endButton()
             }
-        } else {
-            //  ダイヤログ確認なし
+        } else if (cont == true) {
+            //  ダイヤログ確認なし(service実行中)
             if (mGpsLocation) {
                 //  GPS ON
                 btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
                 mGpsTrace.start(cont)
                 GpsServiceStart()
+            }
+        } else if (cont == false) {
+            //  GPS OFF(service停止中)
+            btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
+            if (!gpsCont) {
+                //  新規
+                mGpsTrace.end()
+                GpsServiceEnd()
             } else {
+                //  継続フラグ(データファイルあり)
+                //  変更なし
+            }
+        }
+    }
+
+    /**
+     * GPSトレースの中断/開始(長押し+GPSボタン)
+     */
+    fun setGpsLongButton() {
+        var gpsCont = mGpsTrace.getGpsTraceContinue()
+        if (mGpsLocation) {
+            //  GPSトレース中断
+            pauseButton()
+        } else {
+            //  GPSトレース開始
+            startButton()
+        }
+    }
+
+    /**
+     * GPSトレース開始確認
+     */
+    fun startButton() {
+        //  GPSトレースファイルなし
+        AlertDialog.Builder(this)
+            .setTitle("開始確認")
+            .setMessage("GPSトレースを記録します")
+            .setPositiveButton("開始", { dialog, which ->
+                //  GPS ON
+                btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                mGpsTrace.start()
+                GpsServiceStart()
+                mGpsLocation = true
+            })
+            .setNegativeButton("キャンセル", { dialog, which ->
+            })
+            .show()
+    }
+
+    /**
+     * GPSトレース開始/継続確認
+     */
+    fun startContButton() {
+        //  GPSトレースファイルが残っている
+        AlertDialog.Builder(this)
+            .setTitle("開始確認")
+            .setMessage("GPSトレースを記録します")
+            .setPositiveButton("開始", {
+                    dialog, which ->
+                //  GPS ON
+                btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                mGpsTrace.start()
+                GpsServiceStart()
+                mGpsLocation = true
+            })
+            .setNegativeButton("キャンセル", {
+                    dialog, which ->
+            })
+            .setNeutralButton("継続", {
+                    dialog, which ->
+                //  GPS ON
+                btGpsOn.setBackgroundColor(Color.rgb(200, 50, 100))   //  赤(on)
+                mGpsTrace.start(true)
+                GpsServiceStart(true)
+                mGpsLocation = true
+            })
+            .show()
+    }
+
+    /**
+     * GPSトレース中断確認
+     */
+    fun pauseButton() {
+        //  GPSトレース中断
+        AlertDialog.Builder(this)
+            .setTitle("終了確認")
+            .setMessage("GPSトレースを中断しますか?")
+            .setPositiveButton("中断",{
+                    dialog, which ->
+                //  GPSデータを保存せずに終了
+                btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
+                GpsServiceEnd(false)
+                mGpsLocation = false
+            })
+            .setNegativeButton("キャンセル", {
+                    dialog, which ->
+            })
+            .show()
+    }
+
+    /**
+     * GPSトレース修了確認
+     */
+    fun endButton() {
+        //  GPSトレース終了
+        AlertDialog.Builder(this)
+            .setTitle("終了確認")
+            .setMessage("GPSトレースを保存しますか?")
+            .setPositiveButton("保存なし終了",{
+                    dialog, which ->
+                //  GPSデータを保存せずに終了
+                btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
+                mGpsTrace.end()
+                GpsServiceEnd(false)
+                mGpsLocation = false
+            })
+            .setNeutralButton("保存終了", {
+                    dialog, which ->
                 //  GPS OFF
                 btGpsOn.setBackgroundColor(Color.rgb(100, 50, 200))   //  紫(off)
                 mGpsTrace.end()
                 GpsServiceEnd()
-            }
-        }
+                mGpsLocation = false
+            })
+            .setNegativeButton("キャンセル", {
+                    dialog, which ->
+            })
+            .show()
     }
 
     /**
@@ -1585,7 +1654,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             mGpsTrace.moveGpsFile(mGpsTraceFileFolder)
         }
     }
-
 
     /**
      * アプリデータ情報の表示

@@ -7,7 +7,13 @@ Xperia10(Android15)での問題 (2026/01)
 ・地図上で長押しが有効にならない(?)
 ・画像のダウンロード時に操作ができなくなる
 
+問題点
+・トレースリスト結合ファイルが年別フォルダに入っていない
+・TraceDataフォルダから年別に移動させる機能がいる
+・GPSトレースの中断機能が必要(トレースボタンの長押しで対応)
+
 リファレンス
+    GpsTraceList.kt
     0023: * ====  GPSのトレースデータ(ファイル)を一覧管理  ====
     0025: class GpsTraceList
     0067: fun gpxExport(dataList: List<GpsTraceData>, exportFolder: String)

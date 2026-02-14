@@ -391,10 +391,10 @@ class GpsTraceData() {
                 if (!preLoc.isEmpty())
                     mDistance += klib.cordinateDistance(preLoc, loc)
                 preLoc = loc
-                //  座標データの保存
+                //  座標データの保存(PointD)
                 if (locsave)
                     mLocData.add(loc)
-                //  Locationデータの保存
+                //  Locationデータの保存(LLocation)
                 if (locationSave)
                     mLocationData.add(location)
                 mLocArea.extension(loc)

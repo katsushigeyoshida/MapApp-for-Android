@@ -347,7 +347,7 @@ class GpsTraceList {
      *  mapData     地図位置情報
      */
     fun draw(canvas: Canvas, mapData: MapData) {
-        if (mDisp) {
+//        if (mDisp) {
             for (gpsData in mDataList) {
                 if (gpsData.mVisible &&
                     (gpsData.mLocArea.isEmpty() || !mapData.getAreaCoordinates().outside(gpsData.mLocArea))) {
@@ -356,7 +356,7 @@ class GpsTraceList {
                     gpsData.draw(canvas, mapData)
                 }
             }
-        }
+//        }
     }
 
     /**
@@ -508,10 +508,11 @@ class GpsTraceList {
         gpsTraceData.mGpsTraceData.removeAt(0); //  データの重複回避のため1行目を削除
         //  出力ファイル名の作成
         var count = 0
-        var filePath = mGpsTraceFileFolder + "/" + klib.getFileNameWithoutExtension(dataList[0].mFilePath) + "(" + count + ").csv"
+        val dataFolder = klib.combinedPath(mGpsTraceFileFolder,  klib.date2String(gpsTraceData.mFirstTime, "yyyy"))
+        var filePath = dataFolder + "/" + klib.getFileNameWithoutExtension(dataList[0].mFilePath) + "(" + count + ").csv"
         while (klib.existsFile(filePath)) {
             count++
-            filePath = mGpsTraceFileFolder + "/" + klib.getFileNameWithoutExtension(dataList[0].mFilePath) + "(" + count + ").csv"
+            filePath = dataFolder + "/" + klib.getFileNameWithoutExtension(dataList[0].mFilePath) + "(" + count + ").csv"
         }
         gpsTraceData.saveCsvTraceData(filePath)
         getFileData()

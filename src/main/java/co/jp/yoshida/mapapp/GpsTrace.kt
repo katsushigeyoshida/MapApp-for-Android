@@ -46,8 +46,7 @@ class GpsTrace {
         mGpsTraceFileFolder = filefolder
         mGpsPath = gpsPath
         //  トレースが継続中でなければトレースファイルを削除
-        if (!klib.getBoolPreferences("GpsTraceContinue", mC)) {
-            Log.d(TAG, "init: remove: " + mGpsPath)
+        if (!getGpsTraceContinue()) {
             removeGpxFile(mGpsPath)
         }
     }
@@ -57,13 +56,12 @@ class GpsTrace {
      * count        継続保存(前回の値に追加)
      */
     fun start(cont: Boolean = false) {
-        Log.d(TAG,"start:" + mGpsData.size )
         if (!cont) {
             removeGpxFile(mGpsPath)
             mGpsData.clear()
         }
         mTraceOn = true
-        klib.setBoolPreferences(true, "GpsTraceContinue", mC)
+        setGpsTraceContinue(true)
         val ldt = LocalDateTime.now()
         val formatter = DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
         klib.setStrPreferences(ldt.format(formatter), "GpsTraceStartTime", mC)
@@ -73,9 +71,24 @@ class GpsTrace {
      * GPSトレース終了
      */
     fun end() {
-        Log.d(TAG,"end:" + mGpsData.size + " " + mGpsPointData.size)
         mTraceOn = false
-        klib.setBoolPreferences(false, "GpsTraceContinue", mC)
+        setGpsTraceContinue(false)
+    }
+
+    /**
+     * トレース状態の取得
+     * return : true トレース中
+     */
+    fun getGpsTraceContinue(): Boolean {
+        return klib.getBoolPreferences("GpsTraceContinue", mC)
+    }
+
+    /**
+     * トレース中フラグの設定
+     * cont : true トレース中
+     */
+    fun setGpsTraceContinue(cont: Boolean) {
+        klib.setBoolPreferences(cont, "GpsTraceContinue", mC)
     }
 
     /**
@@ -244,7 +257,6 @@ class GpsTrace {
      * GPSの最新の位置を取得
      */
     fun lastPosition(): PointD {
-        Log.d(TAG,"lastPosition: "+mGpsPointData.size)
         if (0 < mGpsPointData.size)
             return mGpsPointData.last()
         else if (0 < mGpsData.size)

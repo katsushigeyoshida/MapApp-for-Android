@@ -62,6 +62,7 @@ class GpxEditActivity : AppCompatActivity() {
 
         mGpsTraceListPath = klib.getStrPreferences("GpsTraceListPath", this).toString()
         mGpsTraceList.mGpsTraceListPath = mGpsTraceListPath
+        mGpsTraceList.init(klib.getFolder(mGpsTraceListPath), mGpsTraceListPath)
         mGpsTraceList.loadListFile()
 
         val intent = getIntent()
@@ -88,12 +89,10 @@ class GpxEditActivity : AppCompatActivity() {
             mGpxFilePath = intent.getStringExtra("GPSTRACEFILEPATH").toString()
             if (mGpxFilePath.length == 0 && !klib.existsFile(mGpxFilePath))
                 mNewFile = true
-            else
-                mGpsTraceList.mDataList = mGpsTraceList.loadListFile(mGpsTraceListCurPath)
-            Log.d(TAG,"onCreate "+mGpsTraceList.mDataList.count()+" "+mGpsTraceListCurPath+" "+mGpxFilePath)
         }
 
         initControl()
+        loadTraceListFile(mGpxFilePath)
         setDataGpxFile(mGpxFilePath, gpxTitle)
     }
 
@@ -136,6 +135,7 @@ class GpxEditActivity : AppCompatActivity() {
             this, android.R.layout.simple_spinner_dropdown_item, mGpsTraceList.mColorMenu
         )
         spColor.adapter = colorAdapter
+        spColor.setSelection(mGpsTraceList.mColorMenu.indexOf("Red"))
 
         //  線分の太さのSpinner
         val thicknessMenu = (1..15).map { it.toString() }
@@ -143,6 +143,7 @@ class GpxEditActivity : AppCompatActivity() {
             this, android.R.layout.simple_spinner_dropdown_item, thicknessMenu
         )
         spThickness.adapter = thicknessAdapter
+        spThickness.setSelection(2)
 
         //  分類のSpinner
         var categoryAdapter = ArrayAdapter(
@@ -200,7 +201,6 @@ class GpxEditActivity : AppCompatActivity() {
                     mGpsTraceList.mDataList.add(gpsFileData)
                 }
                 mGpsTraceList.saveListFile()
-                Log.d(TAG,"btOK.setOnClickListener "+mGpsTraceList.mDataList.count())
                 setResult(RESULT_OK)
                 finish()
             }
@@ -247,6 +247,22 @@ class GpxEditActivity : AppCompatActivity() {
                 setGpxFileInfo(s)
             }
         }
+    }
+
+    /**
+     * GPXファイルの年のトレースリストファイルを読み込む
+     * gpxFilePath : GPXファイルパス
+     */
+    fun loadTraceListFile(gpxFilePath:String) {
+        if (!klib.existsFile(gpxFilePath))
+            return
+        val gpsTraceData = getGpsFileData(gpxFilePath)
+        if (gpsTraceData != null) {
+            val year = gpsTraceData.getYearStr()
+            Log.d(TAG,"loadTraceListFile "+gpxFilePath+" "+year)
+            mGpsTraceList.loadListFile(year.substring(0, 4).toInt())
+        }
+        Log.d(TAG,"loadTraceListFile "+mGpsTraceList.mDataList.count()+" "+mGpsTraceList.mGpsTraceListCurPath)
     }
 
     /**
