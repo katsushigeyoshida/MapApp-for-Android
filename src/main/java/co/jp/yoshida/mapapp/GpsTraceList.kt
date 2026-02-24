@@ -29,7 +29,7 @@ class GpsTraceList {
     var mErrorMessage = ""                          //  エラー時の内容
 
     var mDataList = mutableListOf<GpsTraceData>()   //  GPSリストデータ
-    var mFilterDataList = mutableListOf<GpsTraceData>()   //  GPSリストデータ
+    var mFilterDataList = mutableListOf<GpsTraceData>()   //  GPSリストのフィルタデータ(表示データ)
     var mGpsTraceListFolder = ""                    //  リストデータ保存フォルダ
     val mGpsTraceListFolderName = "GpsTraceList"    //  リストデータ保存フォルダ
     var mGpsTraceListPath = ""                      //  リストデータのファイル保存パス
@@ -205,8 +205,11 @@ class GpsTraceList {
     fun getGroupList(year: Int, firstTitle: String = ""): List<String> {
         var groupList = mutableListOf<String>()
         for (i in mDataList.indices) {
-            if (!groupList.contains(mDataList[i].mGroup))
-                groupList.add(mDataList[i].mGroup)
+            var datas = mDataList[i].mGroup.split(',')
+            for (data in datas) {
+                if (!groupList.contains(data.trim()))
+                    groupList.add(data.trim())
+            }
         }
         groupList.sortDescending()
         if (0 < firstTitle.length)
@@ -236,8 +239,8 @@ class GpsTraceList {
      * 表示フラグを反転する
      */
     fun reverseVisible() {
-        for (i in mDataList.indices) {
-            mDataList[i].mVisible = !mDataList[i].mVisible
+        for (i in mFilterDataList.indices) {
+            mFilterDataList[i].mVisible = !mFilterDataList[i].mVisible
         }
     }
 
@@ -249,6 +252,15 @@ class GpsTraceList {
         clearVisible()
         for (i in selectList.indices)
             mFilterDataList[selectList[i]].mVisible = true
+    }
+
+    /**
+     * フィルタリングした表示データをすべて経路表示設定にする
+     */
+    fun setVisibleAll() {
+        clearVisible()
+        for (i in mFilterDataList.indices)
+            mFilterDataList[i].mVisible = true
     }
 
     /**
@@ -365,11 +377,13 @@ class GpsTraceList {
      *  year: String        年フィルタ
      *  category: String,   分類フィルタ
      *  group: String,      グループフィルタ
+     *  sword: String        検索文字列
      *  titleType: Int = 0, タイトル表示形式
      *  pathOffset: Int = 0 保存フォルダのオフセット値
      *  return              タイトルリスト
      */
-    fun getListTitleData(year: String, month: String, category: String, group: String, titleType: Int = 0, pathOffset: Int = 0): List<String> {
+    fun getListTitleData(year: String, month: String, category: String, group: String, sword: String,
+                         titleType: Int = 0, pathOffset: Int = 0): List<String> {
         //  ソート処理
         if (mDataListSortCending) {
             if (mDataListSortType == DATALISTSORTTYPE.DATE) {
@@ -400,7 +414,9 @@ class GpsTraceList {
                 (month.compareTo(mAllListName) == 0 || gpsFileData.getMonthStr().compareTo(month) == 0) &&
                 (category.compareTo(mAllListName) == 0 || gpsFileData.mCategory.compareTo(category) == 0) &&
                 ((group.compareTo(mAllListName) == 0 && gpsFileData.mGroup.compareTo(mTrashGroup) != 0)
-                        || gpsFileData.mGroup.compareTo(group) == 0)) {
+                        || (group.length > 0 && gpsFileData.mGroup.indexOf(group) >= 0)
+                        || (group.length == 0 && gpsFileData.mGroup.length == 0)) &&
+                (sword.length == 0 || gpsFileData.contain(sword))) {
                 mFilterDataList.add(gpsFileData)
             }
         }

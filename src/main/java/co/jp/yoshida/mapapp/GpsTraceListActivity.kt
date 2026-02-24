@@ -240,6 +240,14 @@ class GpsTraceListActivity : AppCompatActivity() {
         }
 
         /**
+         * [文字列検索リスト]
+         */
+        btSort.setOnLongClickListener {
+            klib.setInputDialog(this, "検索文字", "", iSearchOperation)
+            true
+        }
+
+        /**
          * [追加]
          */
         btAdd.setOnClickListener {
@@ -312,7 +320,7 @@ class GpsTraceListActivity : AppCompatActivity() {
     var iRouteDispOperatin = Consumer<String> { s ->
         if (s.compareTo(mRootDispMenu[0]) == 0) {
             //  全経路表示
-            mGpsTraceList.setVisible(dispItemlistNo())
+            mGpsTraceList.setVisibleAll()
         } else if (s.compareTo(mRootDispMenu[1]) == 0) {
             //  全経路非表示
             mGpsTraceList.clearVisible()
@@ -370,6 +378,11 @@ class GpsTraceListActivity : AppCompatActivity() {
             mListTitleType = 1
         }
         setDataList()
+    }
+
+    //  文字列検索リスト表示
+    var iSearchOperation = Consumer<String> { s ->
+        setDataList(false, s)
     }
 
     //  エキスポート・移動
@@ -759,8 +772,9 @@ class GpsTraceListActivity : AppCompatActivity() {
     /**
      * 一覧リストを設定し、分類(spinner)の選択位置を設定
      *  firstYearPos 年の選択位置を1にする(最新年)
+     *  sword        検索文字列
      */
-    fun setDataList(firstYearPos: Boolean = false) {
+    fun setDataList(firstYearPos: Boolean = false, sword:String ="") {
         val year     = spYear.selectedItem.toString()
         val month    = spMonth.selectedItem.toString()
         val group    = spGroup.selectedItem.toString()
@@ -770,7 +784,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         if (mSelectList) {
             //  選択リスト
             var listTitleAdapter = ArrayAdapter(this, R.layout.my_simple_list_item_checked,
-                mGpsTraceList.getListTitleData(year, month, category, group, mListTitleType, traceFolderLength))
+                mGpsTraceList.getListTitleData(year, month, category, group, sword, mListTitleType, traceFolderLength))
             lvDataList.choiceMode = ListView.CHOICE_MODE_MULTIPLE
             lvDataList.adapter = listTitleAdapter
             //  visibleをcheckに設定
@@ -779,7 +793,7 @@ class GpsTraceListActivity : AppCompatActivity() {
         } else {
             //  通常リスト
             var listTitleAdapter = ArrayAdapter(this, android.R.layout.simple_list_item_1,
-                mGpsTraceList.getListTitleData(year, month, category, group, mListTitleType, traceFolderLength))
+                mGpsTraceList.getListTitleData(year, month, category, group, sword, mListTitleType, traceFolderLength))
             lvDataList.adapter = listTitleAdapter
             btExport.isEnabled = false
         }

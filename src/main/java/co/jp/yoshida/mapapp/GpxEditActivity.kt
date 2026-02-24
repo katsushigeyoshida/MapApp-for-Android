@@ -228,7 +228,16 @@ class GpxEditActivity : AppCompatActivity() {
 
     //  グループ名をコントロールに設定する関数インターフェース
     var iGpxGroup = Consumer<String> { s ->
-        edGroup.setText(s)
+        var text = edGroup.text.toString()
+        text = text.trim().trim(',').trim()
+        if (text.length == 0)
+            text = s.trim()
+        else {
+            var texts = text.split(',')
+            if (texts.indexOf(s.trim()) < 0)
+                text = text + "," + s.trim()
+        }
+        edGroup.setText(text)
     }
 
     //  GPXファイルパスをコントロールに設定する関数インターフェース

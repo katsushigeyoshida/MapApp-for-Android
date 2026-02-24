@@ -5,6 +5,7 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.location.Location
 import android.location.LocationManager
+import android.text.BoringLayout
 import java.util.Date
 import kotlin.math.max
 import kotlin.math.min
@@ -122,7 +123,24 @@ class GpsTraceData() {
     }
 
     /**
-     * 一覧リスト用タイトル
+     * タイトルとコメントに検索文字列が含まれているか
+     * sword    検索文字列
+     * return   含まれいる
+     */
+    fun contain(word: String): Boolean {
+        if (0 <= mTitle.indexOf(word) ||
+            (0 <= mComment.indexOf(word)))
+            return true
+        else
+            return false
+    }
+
+    /**
+     * 一覧リスト用タイトル作成
+     * titleType : 0:タイトル+分類+グループ+距離+経過時間+速度+標高
+     *             1:タイトル+分類+グループ+データファイルパス
+     *  pathOffset : データファイル名のの長さ]
+     *  return : タイトル文字列
      */
     fun getListTitle(titleType: Int = 0, pathOffset: Int = 0): String {
         var title = if (mVisible) "*" else " "
