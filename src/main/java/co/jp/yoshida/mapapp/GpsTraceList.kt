@@ -359,16 +359,44 @@ class GpsTraceList {
      *  mapData     地図位置情報
      */
     fun draw(canvas: Canvas, mapData: MapData) {
-//        if (mDisp) {
-            for (gpsData in mDataList) {
-                if (gpsData.mVisible &&
-                    (gpsData.mLocArea.isEmpty() || !mapData.getAreaCoordinates().outside(gpsData.mLocArea))) {
-                    if (gpsData.mLocData.size < 1)
-                        gpsData.loadGpsData()
-                    gpsData.draw(canvas, mapData)
-                }
+        for (gpsData in mDataList) {
+            if (gpsData.mVisible &&
+                (gpsData.mLocArea.isEmpty() || !mapData.getAreaCoordinates().outside(gpsData.mLocArea))) {
+                if (gpsData.mLocData.size < 1)
+                    gpsData.loadGpsData()
+                gpsData.draw(canvas, mapData)
             }
-//        }
+        }
+    }
+
+    /**
+     * 表示トレースデータの距離、時間、歩数の歩数の累積値のメッセージ
+     */
+    fun drawDataMsg(): String {
+        var distance: Double = 0.0
+        var lapTime: Double = 0.0
+        var stepCount: Int = 0
+        var dataCount = 0
+        for (gpsData in mDataList) {
+            if (gpsData.mVisible) {
+                distance += gpsData.mDistance
+                lapTime += gpsData.getLapTime()
+                stepCount += gpsData.mStepCount
+                dataCount++
+            }
+        }
+        if (dataCount == 0)
+            return ""
+        var moveMsg = " トレース数 " + dataCount
+        moveMsg += " 距離 " + "%,.2f km".format(distance)
+        val min = lapTime / 60.0
+        if (min / 60.0 < 1.0 )
+            moveMsg += " 時間 " + "%,.1f min".format(min)
+        else
+            moveMsg += " 時間 " + "%d h".format((min / 60).toInt()) + " %2d min".format((min % 60).toInt())
+        moveMsg += " 速度 " + "%,.2f km/h".format(distance / lapTime * 3600)
+        moveMsg += " 歩数 " + "%,d".format(stepCount)
+        return moveMsg
     }
 
     /**

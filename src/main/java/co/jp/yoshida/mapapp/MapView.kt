@@ -118,9 +118,14 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
             else
                 moveMsg += " 経過時間 " + "%d h".format((min / 60).toInt()) + " %2d min".format((min % 60).toInt())
             moveMsg += " 速度 " + "%,.2f km/h".format(mGpsTrace.lastSpeed(mLastSpeedAveSize))
-            moveMsg += " 歩数 " + mGpsTrace.stepCount().toString()
+            moveMsg += " 歩数 " + "%,d".format(mGpsTrace.stepCount())
             y += mInfoTextSize.toFloat() + 10f
             kdraw.drawTextWithBox(moveMsg, PointD(x.toDouble(), y.toDouble()))
+        }
+        var dataMsg = mGpsTraceList.drawDataMsg()
+        if (0 < dataMsg.length) {
+            y += mInfoTextSize.toFloat() + 10f
+            kdraw.drawTextWithBox(dataMsg, PointD(x.toDouble(), y.toDouble()))
         }
         //  色凡例を表示
         if (0 < mComment.length) {

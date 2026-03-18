@@ -346,6 +346,7 @@ class GpsTraceListActivity : AppCompatActivity() {
             for(n in gpsTraceListNo)
                 mGpsTraceList.mFilterDataList[n].mVisible = true
             mSelectList = !mSelectList
+            finish()
         } else if (s.compareTo(mSelectRootDispMenu[1])== 0) {
             //  経路結合
             var gpsTraceListNo = selectItemListNo()
