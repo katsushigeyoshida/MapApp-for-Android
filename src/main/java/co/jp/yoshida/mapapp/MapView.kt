@@ -67,7 +67,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
         mMeasure.draw(canvas, mMapData)
         //  トレース中のGPSデータの表示
         mGpsTrace.draw(canvas, mMapData)
-        //  GPSトレースリスト内のトレースデータ表示
+        //  GPSトレースリスト内で選択したトレースデータ表示
         mGpsTraceList.draw(canvas, mMapData)
         //  中心線
         drawCross()
@@ -122,6 +122,7 @@ class MapView(context: Context, var mMapData: MapData): View(context) {
             y += mInfoTextSize.toFloat() + 10f
             kdraw.drawTextWithBox(moveMsg, PointD(x.toDouble(), y.toDouble()))
         }
+        //  選択したGPSトレース経路のデータ値表示
         var dataMsg = mGpsTraceList.drawDataMsg()
         if (0 < dataMsg.length) {
             y += mInfoTextSize.toFloat() + 10f

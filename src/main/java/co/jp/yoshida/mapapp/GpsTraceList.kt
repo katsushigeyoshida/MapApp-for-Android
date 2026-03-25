@@ -387,7 +387,7 @@ class GpsTraceList {
         }
         if (dataCount == 0)
             return ""
-        var moveMsg = " トレース数 " + dataCount
+        var moveMsg = " 経路数 " + dataCount
         moveMsg += " 距離 " + "%,.2f km".format(distance)
         val min = lapTime / 60.0
         if (min / 60.0 < 1.0 )
