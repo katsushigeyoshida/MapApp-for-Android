@@ -5,11 +5,13 @@ import android.app.ActivityManager
 import android.content.ClipData
 import android.content.ClipDescription
 import android.content.ClipboardManager
+import android.content.ContentUris
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -22,6 +24,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.preference.PreferenceManager
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import android.util.Log
 import android.webkit.MimeTypeMap
 import android.widget.EditText
@@ -31,6 +35,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.getExternalFilesDirs
 import androidx.core.content.FileProvider
 import androidx.core.util.Consumer
+import org.w3c.dom.Document
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
@@ -1769,6 +1774,8 @@ class KLib {
 
     /**
      * URIからパスを取得する
+     * ダウンロードや画像などのFilesが表示するフォルダのパスは首都ぐきないので
+     * 本体またはSDカードから選択したフォルダのみが対象となる
      * uri      ファイルのURI
      * return   フルパス
      */
@@ -1778,10 +1785,70 @@ class KLib {
         var n = uriPath.indexOf(":") + 1
         if (n < 0)
             n = indexOf(uriPath, "/",1) + 1
-        path += "/" + uriPath.substring(n)
+        //  通常フォルダ
+        path = combinedPath(path, uriPath.substring(n))
         if (!existsFile(path))
             path = getExternalStrage(c) + "/" + uriPath.substring(n)
         return path
+    }
+
+    /**
+     * UriをPathに変換する
+     * https://qiita.com/wakamesoba98/items/98b79bdfde19612d12b0
+     * source - https://stackoverflow.com/a/33930169
+     */
+    fun getPathFromUri(context: Context, uri: Uri): String {
+        Log.d(TAG,"Photo url: "+uri.authority+" "+uri.scheme)
+        if (DocumentsContract.isDocumentUri(context, uri)) {
+            if ("com.android.externalstorage.documents".equals(uri.authority)) {
+                val docId = DocumentsContract.getDocumentId(uri)
+                val split = docId.split(":")
+                val type = split[0]
+                if ("primary".equals(type.lowercase())) {
+                    return Environment.getExternalStorageDirectory().path + "/" + split[1]
+                } else {
+                    return "/stroage/" + type +  "/" + split[1]
+                }
+            } else if ("com.android.providers.downloads.documents".equals(uri.getAuthority())) {
+                //  Download
+                val id = DocumentsContract.getDocumentId(uri)
+                val contentUri = ContentUris.withAppendedId(
+                    Uri.parse("content://downloads/public_downloads"), id.toLong())
+                return getDataColumn(context, contentUri, null, null)
+            } else if ("com.android.providers.media.documents".equals(uri.authority)) {
+                //  MediaProvider
+                val docId = DocumentsContract.getDocumentId(uri)
+                val split = docId.split(":")
+                val type = split[0]
+                val contentUri = MediaStore.Files.getContentUri("external")
+                val selection = "_id=?"
+                val selectionArgs = arrayOf(split[1])
+                return getDataColumn(context, contentUri, selection, selectionArgs)
+            }
+        } else if ("content".equals(uri.scheme.toString().lowercase())) {
+            //  MediaStore
+            return getDataColumn(context, uri, null, null)
+        } else if ("file".equals(uri.scheme.toString().lowercase())) {
+            //  File
+            return uri.path.toString()
+        }
+        return ""
+    }
+
+    fun getDataColumn(context: Context, uri: Uri, selection: String?, selectionArgs: Array<String>?): String {
+        var cursor: Cursor? = null
+        val projection = arrayOf ( MediaStore.Files.FileColumns.DATA )
+        try {
+            cursor = context.contentResolver.query(uri, projection, selection, selectionArgs, null)
+            if (cursor != null && cursor.moveToFirst()) {
+                val cindex = cursor.getColumnIndexOrThrow(projection[0])
+                return cursor.getString(cindex)
+            }
+        } finally {
+            if (cursor != null)
+                cursor.close()
+        }
+        return ""
     }
 
     /**

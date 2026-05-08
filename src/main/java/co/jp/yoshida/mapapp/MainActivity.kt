@@ -1870,9 +1870,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             //  写真の座標位置に移動
+            var uriPath = ""
             try {
                 result.data?.data?.also { uri ->
+                    uriPath = uri.path.toString()
                     val coord = klib.getExifCoordinate(klib.getUriPath(this, uri))
+//                    val coord = klib.getExifCoordinate(klib.getPathFromUri(this, uri))
+//                    Log.d(TAG,"PhotoGallery "+klib.getPathFromUri(this, uri))
                     if (!coord.isEmpty()) {
                         mMapData.setLocation(mMapData.coordinates2BaseMap(coord))
                         mapDisp(mMapDataDownLoadMode)     //  再表示
@@ -1881,7 +1885,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     }
                 }
             } catch (e: Exception) {
-                Toast.makeText(this, "エラーが発生しました "+e.message, Toast.LENGTH_LONG).show()
+                Log.d(TAG,"photoGallery "+e.message)
+                Toast.makeText(this, "エラーが発生しました "+uriPath, Toast.LENGTH_LONG).show()
+//                Toast.makeText(this, "エラーが発生しました "+e.message, Toast.LENGTH_LONG).show()
             }
         }
     }

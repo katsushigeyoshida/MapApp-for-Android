@@ -171,6 +171,7 @@ class GpsService : Service(), SensorEventListener {
      */
     private fun GpsLocationEnd() {
         mFusedLocationClient.removeLocationUpdates(mOnUpdateLocation)
+        klib.beep(50 * 3)
     }
 
 
